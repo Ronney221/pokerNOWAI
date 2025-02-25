@@ -19,11 +19,19 @@
       "dest": "/server/server.js"
     },
     {
-      "handle": "filesystem"
+      "src": "^/assets/(.*)",
+      "dest": "/dist/assets/$1"
+    },
+    {
+      "src": "^/favicon.ico",
+      "dest": "/dist/favicon.ico"
     },
     {
       "src": "/(.*)",
-      "dest": "/dist/index.html"
+      "dest": "/dist/index.html",
+      "headers": {
+        "Cache-Control": "no-store"
+      }
     }
   ],
   "env": {
