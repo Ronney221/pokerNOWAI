@@ -4,6 +4,8 @@ import './index.css';
 import Papa from 'papaparse';
 import stringSimilarity from 'string-similarity';
 import { toast } from 'react-toastify';
+import { useAuth } from './contexts/AuthContext';
+import { saveLedgerData } from './services/ledger';
 
 const Ledger = () => {
     const [parsedData, setParsedData] = useState([]);
@@ -12,6 +14,10 @@ const Ledger = () => {
     const [groupingConfirmed, setGroupingConfirmed] = useState(false);
     const [transactions, setTransactions] = useState([]);
     const [aliasSummary, setAliasSummary] = useState({}); // Mapping: alias -> { buyIn, buyOut, stack, combined }
+    const [saving, setSaving] = useState(false);
+    const [sessionName, setSessionName] = useState('Poker Session');
+    const [originalFileName, setOriginalFileName] = useState('');
+    const { currentUser } = useAuth();
   
     // Helper: Compute aggregate data for each alias from parsedData
     const computeAliasSummary = (data) => {
@@ -71,6 +77,8 @@ const Ledger = () => {
       setTransactions([]);
       setAliasGroups([]);
       setAliasSummary({});
+      setOriginalFileName(file.name);
+      setSessionName(`Poker Session - ${new Date().toLocaleDateString()}`);
   
       Papa.parse(file, {
         header: true,
@@ -234,6 +242,47 @@ const Ledger = () => {
       return Object.entries(aggregated); // [ [playerName, { aliases: Set, totals }], ... ]
     };
   
+    // Save ledger to MongoDB (for logged-in users)
+    const handleSaveLedger = async () => {
+      if (!currentUser) {
+        toast.error("You must be logged in to save ledger data");
+        return;
+      }
+      
+      if (transactions.length === 0) {
+        toast.error("You must calculate settlements before saving");
+        return;
+      }
+      
+      try {
+        setSaving(true);
+        
+        // Prepare player data from aliasGroups
+        const players = aggregatedGroups().map(([playerName, { aliases, totals }]) => ({
+          name: playerName,
+          aliases: Array.from(aliases),
+          buyIn: totals.buyIn,
+          cashOut: totals.combined
+        }));
+        
+        // Call the API to save ledger data
+        const result = await saveLedgerData({
+          firebaseUid: currentUser.uid,
+          sessionName: sessionName,
+          players: players,
+          transactions: transactions,
+          originalFileName: originalFileName
+        });
+        
+        toast.success("Ledger saved successfully!");
+      } catch (error) {
+        console.error("Error saving ledger:", error);
+        toast.error(`Failed to save ledger: ${error.message}`);
+      } finally {
+        setSaving(false);
+      }
+    };
+  
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="w-full max-w-4xl mx-auto p-2 sm:p-4 md:p-6">
@@ -387,6 +436,22 @@ const Ledger = () => {
                         Here are the optimal payments to settle all debts
                       </p>
                     </div>
+                    
+                    {currentUser && (
+                      <div className="form-control w-full max-w-md mx-auto">
+                        <label className="label">
+                          <span className="label-text">Session Name (for saving)</span>
+                        </label>
+                        <input 
+                          type="text"
+                          value={sessionName}
+                          onChange={(e) => setSessionName(e.target.value)}
+                          className="input input-bordered w-full"
+                          placeholder="Name this poker session"
+                        />
+                      </div>
+                    )}
+                    
                     <div className="overflow-x-auto">
                       <table className="table table-zebra w-full">
                         <thead>
@@ -407,6 +472,33 @@ const Ledger = () => {
                         </tbody>
                       </table>
                     </div>
+                    
+                    {/* Save Ledger Button (Only for logged-in users) */}
+                    {currentUser && (
+                      <div className="flex justify-center mt-4">
+                        <button 
+                          onClick={handleSaveLedger}
+                          disabled={saving}
+                          className={`btn btn-success ${saving ? 'loading' : ''}`}
+                        >
+                          {saving ? 'Saving...' : 'Save Ledger'}
+                        </button>
+                      </div>
+                    )}
+                    
+                    {/* Login Prompt (Only for non-logged-in users) */}
+                    {!currentUser && transactions.length > 0 && (
+                      <div className="alert alert-info mt-4">
+                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                        </svg>
+                        <div>
+                          <p className="font-semibold">Want to save this ledger?</p>
+                          <p>Sign in to save your ledger data for future reference.</p>
+                        </div>
+                        <a href="/login" className="btn btn-sm">Login</a>
+                      </div>
+                    )}
                   </div>
                 )}
               </div>

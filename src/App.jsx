@@ -9,6 +9,7 @@ import Login from './Login';
 import Profile from './Profile';
 import VerifyEmail from './VerifyEmail';
 import Ledger from './Ledger';
+import SavedLedgers from './SavedLedgers';
 import Home from './Home';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -58,6 +59,9 @@ function App() {
       break;
     case "ledger":
       content = <Ledger />;
+      break;
+    case "saved-ledgers":
+      content = <SavedLedgers setCurrentPage={setCurrentPage} />;
       break;
     case "fullLogUpload":
       content = <FullLogUpload />;

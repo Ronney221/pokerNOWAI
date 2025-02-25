@@ -3,6 +3,7 @@ const router = express.Router();
 const multer = require('multer');
 const User = require('../models/User');
 const Analysis = require('../models/Analysis');
+const Ledger = require('../models/Ledger');
 const { spawn } = require('child_process');
 const path = require('path');
 const PokerLog = require('../models/PokerLog');
@@ -183,6 +184,85 @@ router.get('/logs/:userId', async (req, res) => {
       .sort('-uploadDate');
     
     res.json({ logs });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Save ledger data
+router.post('/save-ledger', async (req, res) => {
+  try {
+    const { firebaseUid, sessionName, players, transactions, originalFileName } = req.body;
+    
+    if (!firebaseUid || !transactions || !transactions.length) {
+      return res.status(400).json({ 
+        error: 'Missing required fields', 
+        details: { 
+          firebaseUid: !firebaseUid, 
+          transactions: !transactions || !transactions.length 
+        } 
+      });
+    }
+
+    // Find user
+    const user = await User.findOne({ firebaseUid });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Process transactions to make sure amounts are numbers
+    const processedTransactions = transactions.map(tx => ({
+      from: tx.from,
+      to: tx.to,
+      amount: parseFloat(tx.amount)
+    }));
+
+    // Create ledger record
+    const ledger = new Ledger({
+      userId: user._id,
+      firebaseUid,
+      sessionName: sessionName || 'Poker Session',
+      sessionDate: new Date(),
+      players: players || [],
+      transactions: processedTransactions,
+      originalFileName
+    });
+
+    await ledger.save();
+
+    res.status(201).json({ 
+      success: true,
+      message: 'Ledger data saved successfully',
+      ledgerId: ledger._id
+    });
+
+  } catch (error) {
+    console.error('Error saving ledger data:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get all ledgers for a user
+router.get('/ledgers/:firebaseUid', async (req, res) => {
+  try {
+    const ledgers = await Ledger.findByFirebaseUid(req.params.firebaseUid)
+      .select('-players.aliases'); // Exclude aliases to reduce response size
+    
+    res.json({ ledgers });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get specific ledger by ID
+router.get('/ledger/:ledgerId', async (req, res) => {
+  try {
+    const ledger = await Ledger.findById(req.params.ledgerId);
+    if (!ledger) {
+      return res.status(404).json({ error: 'Ledger not found' });
+    }
+    
+    res.json({ ledger });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
