@@ -9,8 +9,7 @@
     "preview": "vite preview",
     "server": "node server/server.js",
     "start": "node server/server.js",
-    "client": "vite",
-    "dev:all": "concurrently \"npm run client\" \"npm run server\""
+    "vercel-build": "vite build"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
