@@ -42,8 +42,8 @@ const Navbar = ({ setCurrentPage }) => {
             className="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow">
             <li><a onClick={() => setCurrentPage('home')}>Home</a></li>
             <li><a onClick={() => setCurrentPage('fullLogUpload')}>Pokernow Full Log Upload</a></li>
-            <li><a onClick={() => setCurrentPage('analytics')}>Analytics</a></li>
             <li><a onClick={() => setCurrentPage('ledger')}>Ledger</a></li>
+            <li><a onClick={() => setCurrentPage('analytics')}>Analytics</a></li>
           </ul>
         </div>
       </div>
