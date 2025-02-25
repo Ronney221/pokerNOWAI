@@ -195,7 +195,7 @@ const Register = ({ setCurrentPage }) => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-base-100 to-base-200 px-6">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-base-100 to-base-200 px-6 pt-32">
       <div 
         id="register-form-container"
         className="w-full max-w-md transform transition-all duration-700 opacity-0 translate-y-4"
@@ -348,7 +348,7 @@ const Register = ({ setCurrentPage }) => {
           </div>
         </div>
 
-        <div className="mt-8 text-center">
+        <div className="mt-8 pb-32 text-center">
           <p className="text-base-content/70">
             Already have an account?{' '}
             <span

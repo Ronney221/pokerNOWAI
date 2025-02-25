@@ -13,7 +13,7 @@ const Home = ({ setCurrentPage }) => {
   return (
     <div className="flex flex-col font-sans">
       {/* Hero Section */}
-      <section className="min-h-screen flex items-center justify-center py-20 relative overflow-hidden">
+      <section className="min-h-screen flex items-center justify-center py-20 relative overflow-hidden pt-32">
         <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-secondary/10"></div>
         
         {/* Enhanced animated background elements */}
