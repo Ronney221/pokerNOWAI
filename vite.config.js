@@ -30,9 +30,14 @@ export default defineConfig({
         entryFileNames: 'assets/js/[name]-[hash].js'
       }
     },
-    sourcemap: false,
-    // Add chunk size warnings
-    chunkSizeWarningLimit: 500
+    sourcemap: true,
+    minify: 'terser',
+    terserOptions: {
+      compress: {
+        drop_console: false,
+        drop_debugger: true
+      }
+    }
   },
   server: {
     port: 5173,
