@@ -11,7 +11,8 @@ import {
   checkActionCode
 } from 'firebase/auth';
 import { auth } from '../firebase';
-import { APP_URL, API_URL } from '../config/urls';
+import { APP_URL } from '../config/urls';
+import { saveUserData } from '../services/user';
 
 const AuthContext = createContext();
 
@@ -46,24 +47,15 @@ export function AuthProvider({ children }) {
 
       // Save user data to MongoDB
       try {
-        const response = await fetch(`${API_URL}/users/saveUserData`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            firebaseUid: user.uid,
-            email: user.email,
-            username: username || user.email.split('@')[0],
-            displayName: username || user.email.split('@')[0]
-          }),
+        await saveUserData({
+          firebaseUid: user.uid,
+          email: user.email,
+          username: username || user.email.split('@')[0],
+          displayName: username || user.email.split('@')[0]
         });
-
-        if (!response.ok) {
-          console.error('Failed to save user data to MongoDB:', await response.text());
-        }
       } catch (error) {
         console.error('Error saving user data to MongoDB:', error);
+        throw error;
       }
       
       return userCredential;
@@ -142,24 +134,15 @@ export function AuthProvider({ children }) {
 
       // Sync with MongoDB
       try {
-        const response = await fetch(`${API_URL}/users/saveUserData`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            firebaseUid: currentUser.uid,
-            email: currentUser.email,
-            username: profileData.displayName || currentUser.email.split('@')[0],
-            displayName: profileData.displayName || currentUser.email.split('@')[0]
-          }),
+        await saveUserData({
+          firebaseUid: currentUser.uid,
+          email: currentUser.email,
+          username: profileData.displayName || currentUser.email.split('@')[0],
+          displayName: profileData.displayName || currentUser.email.split('@')[0]
         });
-
-        if (!response.ok) {
-          console.error('Failed to sync profile update with MongoDB:', await response.text());
-        }
       } catch (error) {
         console.error('Error syncing profile update with MongoDB:', error);
+        throw error;
       }
 
       return true;

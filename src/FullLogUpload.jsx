@@ -4,6 +4,7 @@ import { useDropzone } from 'react-dropzone';
 import { useAuth } from './contexts/AuthContext';
 import { toast } from 'react-toastify';
 import { API_URL } from './config/urls';
+import { getUserPokerLogs, uploadPokerLogs } from './services/analytics';
 import './index.css';
 
 const FullLogUpload = () => {
@@ -184,18 +185,7 @@ const FullLogUpload = () => {
         gameDate: file.gameDate
       }));
 
-      const response = await fetch(`${API_URL}/analysis/upload-logs`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          files: fileContents,
-          userId: currentUser.uid
-        }),
-      });
-
-      const data = await response.json();
+      const data = await uploadPokerLogs(fileContents, currentUser.uid);
 
       if (data.success) {
         toast.success('Files uploaded successfully!');
@@ -220,18 +210,18 @@ const FullLogUpload = () => {
                 <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-clip-text">
                   Upload Your Poker Logs
                 </h1>
-                <p className="text-sm sm:text-base md:text-lg opacity-80 leading-relaxed">
-                  To get your log files:
+                <div className="text-sm sm:text-base md:text-lg opacity-80 leading-relaxed">
+                  <p>To get your log files:</p>
                   <ol className="list-decimal list-inside mt-2 text-left max-w-md mx-auto">
                     <li>Go to your pokernow.com game room</li>
                     <li>Click on LOG/LEDGER in the bottom right</li>
                     <li>Click "DOWNLOAD FULL LOG" from the bottom right</li>
                   </ol>
-                  <p className="mt-2 text-warning text-sm">
+                  <div className="mt-2 text-warning text-sm">
                     Note: Logs expire after 5 days and are limited to 20,000 lines.<br/>
                     Maximum file size: 5MB per file.
-                  </p>
-                </p>
+                  </div>
+                </div>
               </div>
 
               {/* Upload Area */}

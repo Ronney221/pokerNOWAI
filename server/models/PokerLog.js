@@ -1,5 +1,16 @@
 const mongoose = require('mongoose');
 
+/**
+ * PokerLog Schema
+ * @typedef {Object} PokerLogSchema
+ * @property {string} userId - Reference to the user who uploaded the log
+ * @property {string} fileName - Original file name
+ * @property {string} fileContent - Content of the poker log file
+ * @property {Date} uploadDate - When the log was uploaded
+ * @property {Date} gameDate - When the poker game took place
+ * @property {boolean} processed - Whether the log has been processed
+ * @property {Array<Object>} processingErrors - Any errors encountered during processing
+ */
 const pokerLogSchema = new mongoose.Schema({
   userId: {
     type: String,
@@ -8,7 +19,8 @@ const pokerLogSchema = new mongoose.Schema({
   },
   fileName: {
     type: String,
-    required: true
+    required: true,
+    trim: true
   },
   fileContent: {
     type: String,
@@ -27,10 +39,49 @@ const pokerLogSchema = new mongoose.Schema({
     default: false
   },
   processingErrors: [{
-    message: String,
-    timestamp: Date
-  }]
+    message: {
+      type: String,
+      required: true
+    },
+    timestamp: {
+      type: Date,
+      default: Date.now
+    }
+  }],
+  metadata: {
+    handCount: Number,
+    players: [String],
+    gameType: String,
+    stakes: String
+  }
 });
+
+// Instance methods
+pokerLogSchema.methods.addError = function(errorMessage) {
+  this.processingErrors.push({
+    message: errorMessage,
+    timestamp: new Date()
+  });
+  return this.save();
+};
+
+pokerLogSchema.methods.markAsProcessed = function() {
+  this.processed = true;
+  return this.save();
+};
+
+// Static methods
+pokerLogSchema.statics.findByUserId = function(userId) {
+  return this.find({ userId }).sort({ uploadDate: -1 });
+};
+
+pokerLogSchema.statics.findUnprocessed = function() {
+  return this.find({ processed: false }).sort({ uploadDate: 1 });
+};
+
+// Indexes
+pokerLogSchema.index({ userId: 1, uploadDate: -1 });
+pokerLogSchema.index({ processed: 1, uploadDate: 1 });
 
 const PokerLog = mongoose.model('PokerLog', pokerLogSchema);
 module.exports = PokerLog; 
