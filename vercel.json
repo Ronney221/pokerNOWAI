@@ -28,19 +28,25 @@
       }
     },
     {
-      "src": "/assets/(.*)",
-      "dest": "/dist/assets/$1",
+      "src": "/assets/js/(.*)",
+      "dest": "/dist/assets/js/$1",
       "headers": {
         "cache-control": "public, max-age=31536000, immutable"
       }
     },
     {
-      "src": "/favicon.ico",
-      "dest": "/dist/favicon.ico"
+      "src": "/assets/css/(.*)",
+      "dest": "/dist/assets/css/$1",
+      "headers": {
+        "cache-control": "public, max-age=31536000, immutable"
+      }
     },
     {
-      "src": "/favicon.svg",
-      "dest": "/dist/favicon.svg"
+      "src": "/assets/img/(.*)",
+      "dest": "/dist/assets/img/$1",
+      "headers": {
+        "cache-control": "public, max-age=31536000, immutable"
+      }
     },
     {
       "handle": "filesystem"
