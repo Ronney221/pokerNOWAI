@@ -39,7 +39,7 @@ export function AuthProvider({ children }) {
 
       // Send email verification with dynamic URL
       const actionCodeSettings = {
-        url: `${APP_URL}/verify-email`,
+        url: `${APP_URL}/home`,
         handleCodeInApp: true
       };
 
