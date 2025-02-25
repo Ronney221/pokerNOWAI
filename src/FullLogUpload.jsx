@@ -201,25 +201,52 @@ const FullLogUpload = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center">
-      <div className="w-full max-w-4xl mx-auto p-2 sm:p-4 md:p-6">
-        <div className="mockup-window bg-base-300 border shadow-lg">
-          <div className="bg-base-200 p-4 sm:p-8 md:p-16">
-            <div className="flex flex-col space-y-6">
-              <div className="text-center space-y-4">
-                <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-clip-text">
-                  Upload Your Poker Logs
-                </h1>
-                <div className="text-sm sm:text-base md:text-lg opacity-80 leading-relaxed">
-                  <p>To get your log files:</p>
-                  <ol className="list-decimal list-inside mt-2 text-left max-w-md mx-auto">
-                    <li>Go to your pokernow.com game room</li>
-                    <li>Click on LOG/LEDGER in the bottom right</li>
-                    <li>Click "DOWNLOAD FULL LOG" from the bottom right</li>
+    <div className="min-h-screen bg-gradient-to-b from-base-100 to-base-200/50 pt-32 pb-20">
+      <div className="container mx-auto px-4">
+        {/* Hero Header */}
+        <div className="text-center mb-12">
+          <div className="inline-block mb-3">
+            <div className="badge badge-primary badge-outline p-3 font-medium text-sm mb-4">Coming Soon</div>
+          </div>
+          <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+            Analyze Your Poker Sessions
+          </h1>
+          <p className="text-lg opacity-80 max-w-2xl mx-auto">
+            Upload your complete hand history logs to unlock powerful insights about your gameplay.
+          </p>
+        </div>
+
+        <div className="max-w-5xl mx-auto">
+          <div className="card bg-base-100 shadow-xl overflow-hidden">
+            <div className="p-8">
+              {/* Instructions */}
+              <div className="mb-10">
+                <h2 className="text-2xl font-semibold mb-4 flex items-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 mr-2 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                  </svg>
+                  How to Get Your Log Files
+                </h2>
+                <div className="pl-8 space-y-2">
+                  <ol className="list-decimal ml-5 space-y-3">
+                    <li className="text-base-content/90">Go to your pokernow.com game room</li>
+                    <li className="text-base-content/90">Click on <span className="font-medium">LOG/LEDGER</span> in the bottom right</li>
+                    <li className="text-base-content/90">Click <span className="font-medium">DOWNLOAD FULL LOG</span> from the bottom right</li>
                   </ol>
-                  <div className="mt-2 text-warning text-sm">
-                    Note: Logs expire after 5 days and are limited to 20,000 lines.<br/>
-                    Maximum file size: 5MB per file.
+                  <div className="mt-4 p-3 bg-warning/10 border-l-4 border-warning rounded-r-lg">
+                    <div className="flex items-start">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 text-warning flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                      </svg>
+                      <div className="text-sm text-base-content/80">
+                        <p className="font-medium mb-1">Important Notes:</p>
+                        <ul className="list-disc ml-5 space-y-1">
+                          <li>Logs expire after 5 days</li>
+                          <li>Files are limited to 20,000 lines</li>
+                          <li>Maximum file size: 5MB per file</li>
+                        </ul>
+                      </div>
+                    </div>
                   </div>
                 </div>
               </div>
@@ -227,85 +254,113 @@ const FullLogUpload = () => {
               {/* Upload Area */}
               <div
                 {...getRootProps()}
-                className={`border-2 border-dashed rounded-lg p-8 text-center cursor-pointer transition-colors
-                  ${isDragActive ? 'border-primary bg-primary/10' : 'border-base-content/20 hover:border-primary/50'}`}
+                className={`border-2 border-dashed rounded-xl p-10 text-center cursor-pointer transition-all duration-300
+                  ${isDragActive ? 'border-primary bg-primary/5 scale-[1.01]' : 'border-base-content/20 hover:border-primary/40 hover:bg-base-200/50'}`}
               >
                 <input {...getInputProps()} />
                 <div className="flex flex-col items-center gap-4">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                  </svg>
+                  <div className={`p-4 rounded-full ${isDragActive ? 'bg-primary/10' : 'bg-base-200'} transition-colors duration-300`}>
+                    <svg xmlns="http://www.w3.org/2000/svg" className={`h-14 w-14 ${isDragActive ? 'text-primary' : 'text-base-content/40'} transition-colors duration-300`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                  </div>
                   <div className="space-y-2">
-                    <p className="text-lg font-semibold">
-                      {isDragActive ? 'Drop your files here' : 'Drag & drop files here'}
+                    <p className="text-xl font-semibold">
+                      {isDragActive ? 'Drop your files here' : 'Drag & drop your log files'}
                     </p>
-                    <p className="text-sm opacity-70">or click to select files</p>
+                    <p className="text-base-content/60">or click to select files</p>
                   </div>
                 </div>
               </div>
 
               {/* File List */}
               {files.length > 0 && (
-                <div className="space-y-4">
-                  <h3 className="font-semibold">Selected Files:</h3>
-                  <div className="space-y-2">
+                <div className="mt-10">
+                  <div className="flex justify-between items-center mb-6">
+                    <h3 className="text-xl font-semibold flex items-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      Selected Files ({files.length})
+                    </h3>
+                    <button 
+                      onClick={() => setFiles([])}
+                      className="btn btn-sm btn-ghost text-error"
+                    >
+                      Clear All
+                    </button>
+                  </div>
+                  
+                  <div className="space-y-3 mb-8">
                     {files.map((file, index) => (
-                      <div key={index} className="flex flex-col bg-base-300 p-3 rounded-lg">
-                        {editingFile === file ? (
-                          <form onSubmit={handleRename} className="flex-1 flex gap-2">
-                            <input
-                              type="text"
-                              value={newFileName}
-                              onChange={(e) => setNewFileName(e.target.value)}
-                              className="input input-sm flex-1"
-                              autoFocus
-                            />
-                            <span className="opacity-50">.csv</span>
-                            <button type="submit" className="btn btn-sm btn-success">
-                              Save
-                            </button>
-                            <button
-                              type="button"
-                              onClick={() => {
-                                setEditingFile(null);
-                                setNewFileName('');
-                              }}
-                              className="btn btn-sm btn-ghost"
-                            >
-                              Cancel
-                            </button>
-                          </form>
-                        ) : (
-                          <>
-                            <div className="flex items-center justify-between">
-                              <span className="truncate flex-1 font-medium">{file.displayName}</span>
+                      <div key={index} className="card bg-base-200 hover:shadow-md transition-all">
+                        <div className="card-body p-5">
+                          {editingFile === file ? (
+                            <form onSubmit={handleRename} className="flex-1 flex gap-2 items-center">
+                              <input
+                                type="text"
+                                value={newFileName}
+                                onChange={(e) => setNewFileName(e.target.value)}
+                                className="input input-bordered flex-1"
+                                autoFocus
+                              />
+                              <span className="opacity-50">.csv</span>
                               <div className="flex gap-2">
-                                <button
-                                  onClick={() => startEditing(file)}
-                                  className="btn btn-ghost btn-sm"
-                                >
-                                  Rename
+                                <button type="submit" className="btn btn-sm btn-success">
+                                  Save
                                 </button>
                                 <button
-                                  onClick={() => removeFile(file)}
-                                  className="btn btn-ghost btn-sm text-error"
+                                  type="button"
+                                  onClick={() => {
+                                    setEditingFile(null);
+                                    setNewFileName('');
+                                  }}
+                                  className="btn btn-sm btn-ghost"
                                 >
-                                  Remove
+                                  Cancel
                                 </button>
                               </div>
-                            </div>
-                            <div className="text-sm opacity-70 mt-1">
-                              Game Date: {file.gameDate.toLocaleDateString()} {file.gameDate.toLocaleTimeString()}
-                            </div>
-                          </>
-                        )}
+                            </form>
+                          ) : (
+                            <>
+                              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                                <div className="flex-1">
+                                  <h3 className="font-medium text-lg truncate" title={file.displayName}>
+                                    {file.displayName}
+                                  </h3>
+                                  <div className="text-sm text-base-content/70 mt-1 flex items-center">
+                                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                    </svg>
+                                    Game Date: {file.gameDate.toLocaleDateString()} {file.gameDate.toLocaleTimeString()}
+                                  </div>
+                                </div>
+                                <div className="flex gap-2">
+                                  <button
+                                    onClick={() => startEditing(file)}
+                                    className="btn btn-sm btn-outline"
+                                  >
+                                    Rename
+                                  </button>
+                                  <button
+                                    onClick={() => removeFile(file)}
+                                    className="btn btn-sm btn-outline btn-error"
+                                  >
+                                    Remove
+                                  </button>
+                                </div>
+                              </div>
+                            </>
+                          )}
+                        </div>
                       </div>
                     ))}
                   </div>
+                  
                   <button
                     onClick={handleUpload}
                     disabled={uploading}
-                    className="btn btn-primary w-full"
+                    className="btn btn-primary btn-lg w-full"
                   >
                     {uploading ? (
                       <div className="flex items-center justify-center gap-2">
@@ -316,6 +371,29 @@ const FullLogUpload = () => {
                       `Upload ${files.length} File${files.length > 1 ? 's' : ''}`
                     )}
                   </button>
+                </div>
+              )}
+              
+              {/* Login Message for non-logged in users */}
+              {!currentUser && (
+                <div className="mt-8 p-6 bg-base-200 rounded-xl border border-base-300">
+                  <div className="flex flex-col md:flex-row items-center gap-6">
+                    <div className="bg-primary/10 p-4 rounded-full">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                      </svg>
+                    </div>
+                    <div className="flex-1 text-center md:text-left">
+                      <h3 className="text-xl font-semibold mb-2">Create an Account to Upload Logs</h3>
+                      <p className="text-base-content/70 mb-4">
+                        Sign up for a free account to upload and analyze your poker game logs. Get personalized insights and track your progress over time.
+                      </p>
+                      <div className="flex gap-4 justify-center md:justify-start">
+                        <a href="/login" className="btn btn-outline">Sign In</a>
+                        <a href="/register" className="btn btn-primary">Create Account</a>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               )}
             </div>

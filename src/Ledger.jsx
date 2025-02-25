@@ -1,5 +1,5 @@
 // src/analytics.jsx
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import './index.css';
 import Papa from 'papaparse';
 import stringSimilarity from 'string-similarity';
@@ -7,7 +7,7 @@ import { toast } from 'react-toastify';
 import { useAuth } from './contexts/AuthContext';
 import { saveLedgerData } from './services/ledger';
 
-const Ledger = () => {
+const Ledger = ({ setCurrentPage }) => {
     const [parsedData, setParsedData] = useState([]);
     const [error, setError] = useState(null);
     const [aliasGroups, setAliasGroups] = useState([]); // Array of { group: string[], canonical: string, totals: {...} }
@@ -15,8 +15,11 @@ const Ledger = () => {
     const [transactions, setTransactions] = useState([]);
     const [aliasSummary, setAliasSummary] = useState({}); // Mapping: alias -> { buyIn, buyOut, stack, combined }
     const [saving, setSaving] = useState(false);
+    const [ledgerSaved, setLedgerSaved] = useState(false);
     const [sessionName, setSessionName] = useState('Poker Session');
     const [originalFileName, setOriginalFileName] = useState('');
+    const [isDragging, setIsDragging] = useState(false);
+    const fileInputRef = useRef(null);
     const { currentUser } = useAuth();
   
     // Helper: Compute aggregate data for each alias from parsedData
@@ -68,9 +71,8 @@ const Ledger = () => {
       return groups;
     };
   
-    // Handle CSV upload and parsing
-    const handleFileUpload = (e) => {
-      const file = e.target.files[0];
+    // Process the file (whether from input change or drop)
+    const processFile = (file) => {
       if (!file) return;
       // Reset state for new file
       setGroupingConfirmed(false);
@@ -79,6 +81,7 @@ const Ledger = () => {
       setAliasSummary({});
       setOriginalFileName(file.name);
       setSessionName(`Poker Session - ${new Date().toLocaleDateString()}`);
+      setLedgerSaved(false);
   
       Papa.parse(file, {
         header: true,
@@ -124,6 +127,56 @@ const Ledger = () => {
           toast.error("Error reading file.");
         },
       });
+    };
+  
+    // Handle file input change
+    const handleFileUpload = (e) => {
+      const file = e.target.files[0];
+      processFile(file);
+    };
+    
+    // Handle drag events
+    const handleDragEnter = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(true);
+    };
+    
+    const handleDragLeave = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(false);
+    };
+    
+    const handleDragOver = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      if (!isDragging) {
+        setIsDragging(true);
+      }
+    };
+    
+    const handleDrop = (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      setIsDragging(false);
+      
+      const files = e.dataTransfer.files;
+      if (files && files.length > 0) {
+        const file = files[0];
+        // Check if it's a CSV file
+        if (file.type === 'text/csv' || file.name.endsWith('.csv')) {
+          processFile(file);
+        } else {
+          setError("Please upload a CSV file.");
+          toast.error("Please upload a CSV file.");
+        }
+      }
+    };
+    
+    // Click handler for the drop area
+    const handleDropAreaClick = () => {
+      fileInputRef.current.click();
     };
   
     // Update player name for a group
@@ -275,6 +328,7 @@ const Ledger = () => {
         });
         
         toast.success("Ledger saved successfully!");
+        setLedgerSaved(true);
       } catch (error) {
         console.error("Error saving ledger:", error);
         toast.error(`Failed to save ledger: ${error.message}`);
@@ -282,221 +336,341 @@ const Ledger = () => {
         setSaving(false);
       }
     };
+
+    // Navigate to saved ledgers page
+    const viewSavedLedgers = () => {
+      setCurrentPage('saved-ledgers');
+    };
   
     return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="w-full max-w-4xl mx-auto p-2 sm:p-4 md:p-6">
-          <div className="mockup-window bg-base-300 border shadow-lg">
-            <div className="bg-base-200 p-4 sm:p-8 md:p-16">
-              <div className="flex flex-col space-y-6">
-                <div className="text-center space-y-4">
-                  <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold bg-clip-text">
-                    Pokernow Ledger Calculator
-                  </h1>
-                  <div className="text-sm sm:text-base md:text-lg opacity-80 leading-relaxed">
-                    <p>
-                      Upload your CSV file. The CSV should include columns:{' '}
-                      <code>player_nickname</code>, <code>buy_in</code>, <code>buy_out</code>, and <code>stack</code>.
-                    </p>
-                    <div className="mt-2 text-warning text-sm">
-                      Note: The calculator will identify similar player nicknames and help settle transactions.
+      <div className="min-h-screen bg-gradient-to-b from-base-100 to-base-200/50 pt-32 pb-20">
+        <div className="container mx-auto px-4">
+          {/* Hero Header */}
+          <div className="text-center mb-12">
+            <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+              Ledger Calculator
+            </h1>
+            <p className="text-lg opacity-80 max-w-2xl mx-auto">
+              Process your poker session data, match player names, and calculate optimal settlements quickly and easily.
+            </p>
+          </div>
+
+          <div className="max-w-5xl mx-auto">
+            <div className="card bg-base-100 shadow-xl overflow-hidden">
+              <div className="p-8">
+                {/* Step 1: Upload CSV */}
+                <div className={`space-y-6 ${aliasGroups.length > 0 ? 'opacity-50 pointer-events-none' : ''}`}>
+                  <div className="flex items-center">
+                    <div className="w-10 h-10 rounded-full bg-primary/20 text-primary flex items-center justify-center mr-4">
+                      <span className="text-lg font-bold">1</span>
                     </div>
+                    <h2 className="text-2xl font-semibold">Upload your CSV file</h2>
+                  </div>
+                  
+                  <p className="text-base-content/70 pl-14">
+                    The CSV should include columns: <code className="bg-base-200 px-1 rounded">player_nickname</code>, <code className="bg-base-200 px-1 rounded">buy_in</code>, <code className="bg-base-200 px-1 rounded">buy_out</code>, and <code className="bg-base-200 px-1 rounded">stack</code>.
+                  </p>
+                  
+                  <div 
+                    className={`flex flex-col items-center px-6 py-10 mt-2 bg-base-200 text-center rounded-xl cursor-pointer border-2 border-dashed ${isDragging ? 'border-primary border-opacity-70 bg-primary bg-opacity-5' : 'border-base-content border-opacity-10 hover:border-primary hover:border-opacity-50'} transition-colors`}
+                    onDragEnter={handleDragEnter}
+                    onDragOver={handleDragOver}
+                    onDragLeave={handleDragLeave}
+                    onDrop={handleDrop}
+                    onClick={handleDropAreaClick}
+                  >
+                    <div className="flex flex-col items-center max-w-md">
+                      <svg xmlns="http://www.w3.org/2000/svg" className={`h-16 w-16 ${isDragging ? 'text-primary' : 'text-base-content/40'} mb-2 transition-colors`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                      </svg>
+                      <div className="text-xl font-medium mb-2">
+                        {isDragging ? 'Drop your CSV file here' : 'Drop your CSV file here'}
+                      </div>
+                      <p className="text-base-content/60 mb-4">or click to browse</p>
+                      <div className="flex items-center text-sm text-base-content/60">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        The calculator will identify similar player names
+                      </div>
+                    </div>
+                    <input 
+                      ref={fileInputRef}
+                      type="file" 
+                      className="hidden" 
+                      accept=".csv" 
+                      onChange={handleFileUpload} 
+                    />
                   </div>
                 </div>
 
-                {/* File Upload Area */}
-                <label className="flex flex-col items-center px-4 py-6 bg-base-300 text-center rounded-lg cursor-pointer border-2 border-dashed border-base-content/20 hover:border-primary/50 transition-colors">
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                  </svg>
-                  <span className="mt-2 text-base leading-normal">Select a CSV file</span>
-                  <input 
-                    type="file" 
-                    className="hidden" 
-                    accept=".csv" 
-                    onChange={handleFileUpload} 
-                  />
-                </label>
-
                 {error && (
-                  <div className="bg-error/20 text-error rounded-lg p-4 text-center">
-                    <p>{error}</p>
+                  <div className="mt-8">
+                    <div className="alert alert-error">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 stroke-current shrink-0" fill="none" viewBox="0 0 24 24">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      <div>
+                        <h3 className="font-bold">Error</h3>
+                        <div className="text-sm">{error}</div>
+                      </div>
+                    </div>
                   </div>
                 )}
 
-                {/* Fuzzy grouping suggestions */}
+                {/* Step 2: Fuzzy grouping suggestions */}
                 {aliasGroups.length > 0 && !groupingConfirmed && (
-                  <div className="space-y-4">
-                    <div className="text-center">
-                      <h3 className="text-xl font-semibold">Confirm Alias Grouping</h3>
-                      <p className="mt-2 opacity-80">
-                        We detected similar nicknames with their aggregated financial data.
-                        Adjust the Player Name if needed.
-                      </p>
+                  <div className="mt-10 border-t border-base-200 pt-10">
+                    <div className="flex items-center mb-6">
+                      <div className="w-10 h-10 rounded-full bg-primary/20 text-primary flex items-center justify-center mr-4">
+                        <span className="text-lg font-bold">2</span>
+                      </div>
+                      <h2 className="text-2xl font-semibold">Confirm Player Names</h2>
                     </div>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      {aliasGroups.map((groupObj, index) => (
-                        <div key={index} className="bg-base-300 rounded-lg p-4 shadow-sm">
-                          <div className="mb-2 text-sm">
-                            <span className="font-semibold">Aliases:</span> {groupObj.group.join(', ')}
+                    
+                    <p className="text-base-content/70 mb-8 pl-14">
+                      We detected similar nicknames with their aggregated financial data.
+                      Please review and adjust the Player Names if needed.
+                    </p>
+                    
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
+                      {aliasGroups.map((groupObj, index) => {
+                        const hasMultipleNames = groupObj.group.length > 1;
+                        return (
+                          <div 
+                            key={index} 
+                            className={`card ${hasMultipleNames ? 'bg-primary/5 border border-primary/20' : 'bg-base-200'} shadow-sm hover:shadow transition-all`}
+                          >
+                            <div className="card-body p-5">
+                              <div className="mb-3 flex items-start justify-between">
+                                <div>
+                                  <h3 className="font-medium">Aliases</h3>
+                                  <div className="text-sm mt-1 flex flex-wrap gap-1">
+                                    {groupObj.group.map((alias, i) => (
+                                      <span key={i} className="badge badge-sm">{alias}</span>
+                                    ))}
+                                  </div>
+                                </div>
+                                <div className={`badge ${hasMultipleNames ? 'badge-primary' : 'badge-outline'} ${hasMultipleNames ? 'animate-pulse' : ''}`}>
+                                  {groupObj.group.length} {groupObj.group.length === 1 ? 'name' : 'names'}
+                                </div>
+                              </div>
+                              
+                              <div className="mb-3 text-sm grid grid-cols-2 gap-2">
+                                <div>
+                                  <span className="text-xs opacity-70">Buy-in</span>
+                                  <div className="font-medium">${(groupObj.totals.buyIn / 100).toFixed(2)}</div>
+                                </div>
+                                <div>
+                                  <span className="text-xs opacity-70">Cash-out</span>
+                                  <div className="font-medium">${(groupObj.totals.combined / 100).toFixed(2)}</div>
+                                </div>
+                              </div>
+                              
+                              <div className="form-control">
+                                <label className="label">
+                                  <span className="label-text font-medium">Player Name</span>
+                                </label>
+                                <input
+                                  type="text"
+                                  value={groupObj.canonical}
+                                  onChange={(e) => handleCanonicalChange(index, e.target.value)}
+                                  className="input input-bordered w-full"
+                                />
+                              </div>
+                            </div>
                           </div>
-                          <div className="mb-2 text-sm">
-                            {groupObj.group.length > 1 ? (
-                              <>
-                                <span className="font-semibold">Group Totals:</span> Buy‑in: $
-                                {(groupObj.totals.buyIn / 100).toFixed(2)}, Combined Cash‑out: $
-                                {(groupObj.totals.combined / 100).toFixed(2)}
-                              </>
-                            ) : (
-                              <>
-                                <span className="font-semibold">Buy‑in:</span> $
-                                {(aliasSummary[groupObj.group[0]].buyIn / 100).toFixed(2)},{' '}
-                                <span className="font-semibold">Combined Cash‑out:</span> $
-                                {(aliasSummary[groupObj.group[0]].combined / 100).toFixed(2)}
-                              </>
-                            )}
-                          </div>
-                          <div className="form-control">
-                            <label className="label">
-                              <span className="label-text">Player Name:</span>
-                            </label>
-                            <input
-                              type="text"
-                              value={groupObj.canonical}
-                              onChange={(e) => handleCanonicalChange(index, e.target.value)}
-                              className="input input-bordered input-sm w-full"
-                            />
-                          </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
-                    <div className="flex justify-center mt-6">
+                    
+                    <div className="flex justify-center mt-8">
                       <button
                         onClick={confirmGrouping}
-                        className="btn btn-primary"
+                        className="btn btn-primary btn-lg"
                       >
-                        Confirm Groupings
+                        Confirm Player Names
                       </button>
                     </div>
                   </div>
                 )}
 
-                {/* Confirmed groupings displayed in a table */}
+                {/* Step 3: Confirmed groupings displayed in a table */}
                 {groupingConfirmed && (
-                  <div className="space-y-4">
-                    <div className="divider"></div>
-                    <div className="text-center">
-                      <h3 className="text-xl font-semibold">Confirmed Groupings</h3>
+                  <div className="mt-10 border-t border-base-200 pt-10">                    
+                    <div className="flex items-center mb-6">
+                      <div className="w-10 h-10 rounded-full bg-primary/20 text-primary flex items-center justify-center mr-4">
+                        <span className="text-lg font-bold">3</span>
+                      </div>
+                      <h2 className="text-2xl font-semibold">Review Player Data</h2>
                     </div>
-                    <div className="overflow-x-auto">
-                      <table className="table table-zebra w-full">
-                        <thead>
-                          <tr>
-                            <th>Player Name</th>
-                            <th>Aliases</th>
-                            <th>Buy‑in</th>
-                            <th>Combined Cash‑out</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {aggregatedGroups().map(([playerName, { aliases, totals }]) => (
-                            <tr key={playerName}>
-                              <td className="font-medium">{playerName}</td>
-                              <td className="text-sm">{Array.from(aliases).join(", ")}</td>
-                              <td>${(totals.buyIn / 100).toFixed(2)}</td>
-                              <td>${(totals.combined / 100).toFixed(2)}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                    
+                    <div className="card bg-base-200 overflow-hidden">
+                      <div className="p-6">
+                        <div className="overflow-x-auto">
+                          <table className="table w-full">
+                            <thead>
+                              <tr className="bg-base-300">
+                                <th>Player Name</th>
+                                <th>Aliases</th>
+                                <th className="text-right">Buy‑in</th>
+                                <th className="text-right">Cash‑out</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {aggregatedGroups().map(([playerName, { aliases, totals }]) => (
+                                <tr key={playerName} className="hover">
+                                  <td className="font-medium">{playerName}</td>
+                                  <td className="text-sm text-base-content/70">
+                                    <div className="flex flex-wrap gap-1">
+                                      {Array.from(aliases).map((alias, i) => (
+                                        <span key={i} className="badge badge-sm badge-ghost">{alias}</span>  
+                                      ))}
+                                    </div>
+                                  </td>
+                                  <td className="text-right">${(totals.buyIn / 100).toFixed(2)}</td>
+                                  <td className="text-right">${(totals.combined / 100).toFixed(2)}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
                     </div>
 
                     {/* Action Buttons */}
-                    <div className="flex justify-center gap-4 mt-6">
-                      <button onClick={backToGrouping} className="btn btn-outline">
-                        Back to Grouping
+                    <div className="flex justify-center gap-4 mt-8">
+                      <button 
+                        onClick={backToGrouping} 
+                        className="btn btn-outline"
+                      >
+                        Edit Player Names
                       </button>
                       <button
                         onClick={calculateSettlement}
                         className="btn btn-primary"
                       >
-                        Calculate Settlement
+                        Calculate Settlements
                       </button>
                     </div>
                   </div>
                 )}
 
-                {/* Settlement Transactions displayed in a table */}
+                {/* Step 4: Settlement Transactions displayed in a table */}
                 {transactions.length > 0 && (
-                  <div className="space-y-4">
-                    <div className="divider"></div>
-                    <div className="text-center">
-                      <h3 className="text-xl font-semibold">Settlement Transactions</h3>
-                      <p className="mt-2 opacity-80">
-                        Here are the optimal payments to settle all debts
-                      </p>
-                    </div>
-                    
-                    {currentUser && (
-                      <div className="form-control w-full max-w-md mx-auto">
-                        <label className="label">
-                          <span className="label-text">Session Name (for saving)</span>
-                        </label>
-                        <input 
-                          type="text"
-                          value={sessionName}
-                          onChange={(e) => setSessionName(e.target.value)}
-                          className="input input-bordered w-full"
-                          placeholder="Name this poker session"
-                        />
+                  <div className="mt-10 border-t border-base-200 pt-10">
+                    <div className="flex items-center mb-6">
+                      <div className="w-10 h-10 rounded-full bg-primary/20 text-primary flex items-center justify-center mr-4">
+                        <span className="text-lg font-bold">4</span>
                       </div>
-                    )}
-                    
-                    <div className="overflow-x-auto">
-                      <table className="table table-zebra w-full">
-                        <thead>
-                          <tr>
-                            <th>From</th>
-                            <th>To</th>
-                            <th>Amount</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {transactions.map((t, index) => (
-                            <tr key={index}>
-                              <td className="font-medium">{t.from}</td>
-                              <td className="font-medium">{t.to}</td>
-                              <td className="text-success font-medium">${t.amount}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
+                      <h2 className="text-2xl font-semibold">Settlement Transactions</h2>
                     </div>
                     
-                    {/* Save Ledger Button (Only for logged-in users) */}
-                    {currentUser && (
-                      <div className="flex justify-center mt-4">
+                    <p className="text-base-content/70 mb-8 pl-14">
+                      Here are the optimal payments to settle all debts between players.
+                    </p>
+                    
+                    <div className="card bg-base-200 overflow-hidden mb-8">
+                      <div className="p-6">
+                        <div className="overflow-x-auto">
+                          <table className="table w-full">
+                            <thead>
+                              <tr className="bg-base-300">
+                                <th>From</th>
+                                <th>To</th>
+                                <th className="text-right">Amount</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {transactions.map((t, index) => (
+                                <tr key={index} className="hover">
+                                  <td className="font-medium">{t.from}</td>
+                                  <td className="font-medium">{t.to}</td>
+                                  <td className="text-success font-semibold text-right">${t.amount}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    {/* Save Options */}
+                    {currentUser && !ledgerSaved && (
+                      <div className="card bg-base-100 shadow-lg border border-base-300 p-6 mb-8">
+                        <h3 className="text-xl font-medium mb-4">Save this Ledger</h3>
+                        <div className="form-control mb-6">
+                          <label className="label">
+                            <span className="label-text">Session Name</span>
+                          </label>
+                          <input 
+                            type="text"
+                            value={sessionName}
+                            onChange={(e) => setSessionName(e.target.value)}
+                            className="input input-bordered w-full"
+                            placeholder="Name this poker session"
+                          />
+                          <label className="label">
+                            <span className="label-text-alt text-base-content/60">This name will help you identify this session later</span>
+                          </label>
+                        </div>
+                        
                         <button 
                           onClick={handleSaveLedger}
                           disabled={saving}
                           className={`btn btn-success ${saving ? 'loading' : ''}`}
                         >
-                          {saving ? 'Saving...' : 'Save Ledger'}
+                          {saving ? 'Saving Ledger...' : 'Save Ledger'}
+                        </button>
+                      </div>
+                    )}
+
+                    {/* View Saved Ledgers (after saving) */}
+                    {currentUser && ledgerSaved && (
+                      <div className="card bg-base-100 shadow-lg border border-base-300 p-6 mb-8">
+                        <div className="flex items-center mb-4">
+                          <div className="flex-shrink-0 mr-4">
+                            <div className="w-12 h-12 bg-success/20 text-success rounded-full flex items-center justify-center">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                              </svg>
+                            </div>
+                          </div>
+                          <div>
+                            <h3 className="text-xl font-medium text-success">Ledger Saved Successfully!</h3>
+                            <p className="text-base-content/70 text-sm mt-1">
+                              Your ledger data has been saved as "{sessionName}"
+                            </p>
+                          </div>
+                        </div>
+                        
+                        <button 
+                          onClick={viewSavedLedgers}
+                          className="btn btn-primary mt-2"
+                        >
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                          View Saved Ledgers
                         </button>
                       </div>
                     )}
                     
                     {/* Login Prompt (Only for non-logged-in users) */}
                     {!currentUser && transactions.length > 0 && (
-                      <div className="alert alert-info mt-4">
-                        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                        </svg>
-                        <div>
-                          <p className="font-semibold">Want to save this ledger?</p>
-                          <p>Sign in to save your ledger data for future reference.</p>
+                      <div className="card bg-base-100 shadow-lg border border-base-300 p-6">
+                        <div className="flex items-center space-x-4">
+                          <div className="flex-shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-info" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                          </div>
+                          <div className="flex-1">
+                            <h3 className="text-xl font-semibold">Want to save this ledger?</h3>
+                            <p className="text-base-content/70 mt-1">Sign in to save your ledger data for future reference and access more features.</p>
+                          </div>
+                          <a href="/login" className="btn btn-info">Login</a>
                         </div>
-                        <a href="/login" className="btn btn-sm">Login</a>
                       </div>
                     )}
                   </div>

@@ -10,6 +10,7 @@ import Profile from './Profile';
 import VerifyEmail from './VerifyEmail';
 import Ledger from './Ledger';
 import SavedLedgers from './SavedLedgers';
+import SharedLedger from './SharedLedger';
 import Home from './Home';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -24,22 +25,51 @@ function App() {
     if (urlParams.get('oobCode') && window.location.pathname.includes('/verify-email')) {
       return 'verify-email';
     }
+    
+    // Check if we're on a shared ledger page (format: /shared-ledger/LEDGER_ID)
+    const path = window.location.pathname;
+    const sharedLedgerMatch = path.match(/^\/shared-ledger\/([^/]+)$/);
+    if (sharedLedgerMatch) {
+      return 'shared-ledger';
+    }
+    
     // Get page from URL path or fallback to home
-    const path = window.location.pathname.substring(1);
-    return path || 'home';
+    const pagePath = path.substring(1).split('/')[0];
+    return pagePath || 'home';
+  });
+  
+  // Store ledger ID if we're on a shared ledger page
+  const [sharedLedgerId, setSharedLedgerId] = useState(() => {
+    const path = window.location.pathname;
+    const sharedLedgerMatch = path.match(/^\/shared-ledger\/([^/]+)$/);
+    return sharedLedgerMatch ? sharedLedgerMatch[1] : null;
   });
 
   // Update URL and localStorage when page changes
   useEffect(() => {
-    const path = currentPage === 'home' ? '/' : `/${currentPage}`;
-    window.history.pushState({}, '', path);
+    // Don't modify the URL for shared ledger pages as they have a special format
+    if (currentPage !== 'shared-ledger') {
+      const path = currentPage === 'home' ? '/' : `/${currentPage}`;
+      window.history.pushState({}, '', path);
+    }
   }, [currentPage]);
 
   // Handle browser back/forward buttons
   useEffect(() => {
     const handlePopState = () => {
-      const path = window.location.pathname.substring(1) || 'home';
-      setCurrentPage(path);
+      const path = window.location.pathname;
+      
+      // Check if we're on a shared ledger page
+      const sharedLedgerMatch = path.match(/^\/shared-ledger\/([^/]+)$/);
+      if (sharedLedgerMatch) {
+        setCurrentPage('shared-ledger');
+        setSharedLedgerId(sharedLedgerMatch[1]);
+        return;
+      }
+      
+      // Otherwise handle as normal page
+      const pagePath = path.substring(1) || 'home';
+      setCurrentPage(pagePath);
     };
 
     window.addEventListener('popstate', handlePopState);
@@ -58,10 +88,13 @@ function App() {
       content = <Analytics />;
       break;
     case "ledger":
-      content = <Ledger />;
+      content = <Ledger setCurrentPage={setCurrentPage} />;
       break;
     case "saved-ledgers":
       content = <SavedLedgers setCurrentPage={setCurrentPage} />;
+      break;
+    case "shared-ledger":
+      content = <SharedLedger ledgerId={sharedLedgerId} setCurrentPage={setCurrentPage} />;
       break;
     case "fullLogUpload":
       content = <FullLogUpload />;

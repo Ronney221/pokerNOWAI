@@ -268,4 +268,58 @@ router.get('/ledger/:ledgerId', async (req, res) => {
   }
 });
 
+// Get publicly shared ledger by ID (no authentication required)
+router.get('/shared-ledger/:ledgerId', async (req, res) => {
+  try {
+    const ledger = await Ledger.findById(req.params.ledgerId);
+    if (!ledger) {
+      return res.status(404).json({ error: 'Shared ledger not found' });
+    }
+    
+    // Return the ledger with just the necessary information for public viewing
+    // This approach avoids exposing sensitive data if any exists
+    const publicLedger = {
+      _id: ledger._id,
+      sessionName: ledger.sessionName,
+      sessionDate: ledger.sessionDate,
+      players: ledger.players.map(player => ({
+        name: player.name,
+        buyIn: player.buyIn,
+        cashOut: player.cashOut
+      })),
+      transactions: ledger.transactions
+    };
+    
+    res.json({ ledger: publicLedger });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete ledger by ID
+router.delete('/ledger/:ledgerId', async (req, res) => {
+  try {
+    const ledger = await Ledger.findById(req.params.ledgerId);
+    if (!ledger) {
+      return res.status(404).json({ error: 'Ledger not found' });
+    }
+    
+    // Optional: Check if the user has permission to delete this ledger
+    // if (req.body.firebaseUid && ledger.firebaseUid !== req.body.firebaseUid) {
+    //   return res.status(403).json({ error: 'You do not have permission to delete this ledger' });
+    // }
+    
+    await Ledger.findByIdAndDelete(req.params.ledgerId);
+    
+    res.json({ 
+      success: true, 
+      message: 'Ledger deleted successfully',
+      deletedId: req.params.ledgerId
+    });
+  } catch (error) {
+    console.error('Error deleting ledger:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 module.exports = router; 
