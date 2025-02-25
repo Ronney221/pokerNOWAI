@@ -43,6 +43,7 @@ const Navbar = ({ setCurrentPage }) => {
             <li><a onClick={() => setCurrentPage('home')}>Home</a></li>
             <li><a onClick={() => setCurrentPage('fullLogUpload')}>Pokernow Full Log Upload</a></li>
             <li><a onClick={() => setCurrentPage('analytics')}>Analytics</a></li>
+            <li><a onClick={() => setCurrentPage('ledger')}>Ledger</a></li>
           </ul>
         </div>
       </div>
