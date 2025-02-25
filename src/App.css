@@ -1,3 +1,28 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+/* Fix for input highlighting issues */
+@layer base {
+  /* Override browser autofill styling */
+  input:-webkit-autofill,
+  input:-webkit-autofill:hover, 
+  input:-webkit-autofill:focus,
+  input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px var(--fallback-b1, oklch(var(--b1))) inset !important;
+    -webkit-text-fill-color: var(--fallback-bc, oklch(var(--bc))) !important;
+    transition: background-color 5000s ease-in-out 0s;
+  }
+
+  /* Better focus styling for inputs */
+  .input:focus {
+    outline: 2px solid var(--fallback-p, oklch(var(--p))) !important;
+    outline-offset: 2px !important;
+    border-color: var(--fallback-p, oklch(var(--p))) !important;
+  }
+
+  /* Custom selection color for inputs */
+  .input::selection {
+    background-color: var(--fallback-p, oklch(var(--p) / 0.2)) !important;
+  }
+}
