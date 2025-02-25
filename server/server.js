@@ -24,18 +24,19 @@ const app = express();
 
 // CORS configuration
 const allowedOrigins = process.env.NODE_ENV === 'production'
-  ? ['https://pokernowai.com']
-  : ['http://localhost:5173']; 
+  ? ['https://pokernowai.com', 'https://www.pokernowai.com']
+  : ['http://localhost:5173', 'https://pokernowai.com', 'https://www.pokernowai.com']; 
 
 const corsOptions = {
   origin: function (origin, callback) {
     // Allow requests with no origin (like mobile apps or curl requests)
     if (!origin) return callback(null, true);
     
-    if (allowedOrigins.indexOf(origin) !== -1) {
+    if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
       console.warn('Blocked by CORS:', origin);
+      console.warn('Allowed origins:', allowedOrigins);
       callback(new Error('Not allowed by CORS'));
     }
   },
