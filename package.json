@@ -10,8 +10,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "server": "cd server && npm start",
-    "start": "cd server && npm start",
-    "vercel-build": "npm install && cd server && npm install && cd .. && npm run build"
+    "start": "cd server && npm start"
   },
   "dependencies": {
     "@heroicons/react": "^2.2.0",
