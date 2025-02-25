@@ -13,22 +13,50 @@ router.post('/saveUserData', async (req, res) => {
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
-    console.log('Attempting to save/update user with firebaseUid:', firebaseUid);
-    const user = await User.findOneAndUpdate(
-      { firebaseUid },
-      { 
-        email,
-        username: username || email.split('@')[0],
-        displayName: displayName || username || email.split('@')[0],
-        lastLogin: new Date()
-      },
-      { 
-        upsert: true, 
-        new: true,
-        runValidators: true
-      }
-    );
-    
+    // Check if user already exists
+    const existingUser = await User.findOne({ 
+      $or: [
+        { firebaseUid },
+        { email },
+        { username }
+      ]
+    });
+
+    if (existingUser) {
+      console.log('Updating existing user:', existingUser._id);
+      const updatedUser = await User.findOneAndUpdate(
+        { firebaseUid },
+        { 
+          email,
+          username: username || email.split('@')[0],
+          displayName: displayName || username || email.split('@')[0],
+          lastLogin: new Date()
+        },
+        { 
+          new: true,
+          runValidators: true
+        }
+      );
+      return res.status(200).json({ user: updatedUser });
+    }
+
+    // Create new user
+    console.log('Creating new user with data:', {
+      firebaseUid,
+      email,
+      username: username || email.split('@')[0],
+      displayName: displayName || username || email.split('@')[0]
+    });
+
+    const user = new User({
+      firebaseUid,
+      email,
+      username: username || email.split('@')[0],
+      displayName: displayName || username || email.split('@')[0],
+      lastLogin: new Date()
+    });
+
+    await user.save();
     console.log('User saved successfully:', user);
     res.status(200).json({ user });
   } catch (error) {
@@ -37,7 +65,28 @@ router.post('/saveUserData', async (req, res) => {
       stack: error.stack,
       body: req.body
     });
-    res.status(500).json({ error: error.message });
+
+    // Check for specific MongoDB errors
+    if (error.code === 11000) {
+      // Duplicate key error
+      return res.status(409).json({ 
+        error: 'Username or email already exists',
+        details: error.keyPattern
+      });
+    }
+
+    // Validation errors
+    if (error.name === 'ValidationError') {
+      return res.status(400).json({ 
+        error: 'Validation error',
+        details: Object.values(error.errors).map(err => err.message)
+      });
+    }
+
+    res.status(500).json({ 
+      error: 'Server error while saving user data',
+      message: error.message
+    });
   }
 });
 
