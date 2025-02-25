@@ -24,7 +24,11 @@ const app = express();
 
 // CORS configuration
 const allowedOrigins = process.env.NODE_ENV === 'production'
-  ? ['https://pokernowai.com', 'https://www.pokernowai.com']
+  ? [
+      'https://pokernowai.com',
+      'https://www.pokernowai.com',
+      'https://api.pokernowai.com'
+    ]
   : ['http://localhost:5173'];
 
 const corsOptions = {
