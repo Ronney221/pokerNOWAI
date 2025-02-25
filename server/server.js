@@ -25,7 +25,7 @@ const app = express();
 // CORS configuration
 const allowedOrigins = process.env.NODE_ENV === 'production'
   ? ['https://pokernowai.com']
-  : ['http://localhost:5173'];
+  : ['http://localhost:5173']; 
 
 const corsOptions = {
   origin: function (origin, callback) {
