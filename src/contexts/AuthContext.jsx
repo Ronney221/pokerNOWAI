@@ -11,6 +11,7 @@ import {
   checkActionCode
 } from 'firebase/auth';
 import { auth } from '../firebase';
+import { APP_URL, API_URL } from '../config/urls';
 
 const AuthContext = createContext();
 
@@ -35,15 +36,15 @@ export function AuthProvider({ children }) {
         });
       }
 
-      // Send email verification with custom URL
+      // Send email verification with dynamic URL
       await sendEmailVerification(user, {
-        url: 'http://localhost:5173',
+        url: `${APP_URL}/verify-email`,
         handleCodeInApp: true,
       });
 
       // Save user data to MongoDB
       try {
-        const response = await fetch('http://localhost:5000/api/users/saveUserData', {
+        const response = await fetch(`${API_URL}/users/saveUserData`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -92,7 +93,7 @@ export function AuthProvider({ children }) {
     if (currentUser && !currentUser.emailVerified) {
       try {
         await sendEmailVerification(currentUser, {
-          url: 'http://localhost:5173/verify-email',
+          url: `${APP_URL}/verify-email`,
           handleCodeInApp: true,
         });
         return true;
@@ -105,7 +106,7 @@ export function AuthProvider({ children }) {
   async function resetPassword(email) {
     try {
       await sendPasswordResetEmail(auth, email, {
-        url: 'http://localhost:5173/login',
+        url: `${APP_URL}/login`,
       });
       return true;
     } catch (error) {
@@ -137,7 +138,7 @@ export function AuthProvider({ children }) {
 
       // Sync with MongoDB
       try {
-        const response = await fetch('http://localhost:5000/api/users/saveUserData', {
+        const response = await fetch(`${API_URL}/users/saveUserData`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

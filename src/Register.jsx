@@ -62,7 +62,7 @@ const Register = ({ setCurrentPage }) => {
   };
 
   const handleGetStarted = () => {
-    setCurrentPage('template2');
+    setCurrentPage('home');
     toast.success('Welcome to PokerNowAI! Let\'s get started with your poker analysis.');
   };
 

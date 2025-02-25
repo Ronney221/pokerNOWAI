@@ -3,8 +3,8 @@ import React, { useState, useEffect } from 'react';
 import Navbar from './Navbar';
 import Footer from './Footer';
 import Register from './Register';
-import Template1 from './Template1';
-import Template2 from './Template2';
+import FullLogUpload from './FullLogUpload';
+import Analytics from './Analytics';
 import Login from './Login';
 import Profile from './Profile';
 import VerifyEmail from './VerifyEmail';
@@ -22,16 +22,15 @@ function App() {
     if (urlParams.get('oobCode') && window.location.pathname.includes('/verify-email')) {
       return 'verify-email';
     }
-    // Get page from URL path or fallback to stored page or home
-    const path = window.location.pathname.substring(1) || localStorage.getItem('currentPage') || 'home';
-    return path;
+    // Get page from URL path or fallback to home
+    const path = window.location.pathname.substring(1);
+    return path || 'home';
   });
 
   // Update URL and localStorage when page changes
   useEffect(() => {
     const path = currentPage === 'home' ? '/' : `/${currentPage}`;
     window.history.pushState({}, '', path);
-    localStorage.setItem('currentPage', currentPage);
   }, [currentPage]);
 
   // Handle browser back/forward buttons
@@ -53,11 +52,11 @@ function App() {
     case "register":
       content = <Register setCurrentPage={setCurrentPage} />;
       break;
-    case "template2":
-      content = <Template2 />;
+    case "analytics":
+      content = <Analytics />;
       break;
-    case "template1":
-      content = <Template1 />;
+    case "fullLogUpload":
+      content = <FullLogUpload />;
       break;
     case "login":
       content = <Login setCurrentPage={setCurrentPage} />;
@@ -69,7 +68,7 @@ function App() {
       content = <VerifyEmail setCurrentPage={setCurrentPage} />;
       break;
     default:
-      content = <Template1 setCurrentPage={setCurrentPage} />;
+      content = <Home setCurrentPage={setCurrentPage} />;
   }
 
   return (

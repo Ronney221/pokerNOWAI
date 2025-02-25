@@ -5,7 +5,7 @@ import { useAuth } from './contexts/AuthContext';
 import { toast } from 'react-toastify';
 import './index.css';
 
-const Template1 = () => {
+const FullLogUpload = () => {
   const [files, setFiles] = useState([]);
   const [uploading, setUploading] = useState(false);
   const [editingFile, setEditingFile] = useState(null);
@@ -335,4 +335,4 @@ const Template1 = () => {
   );
 };
 
-export default Template1;
+export default FullLogUpload;

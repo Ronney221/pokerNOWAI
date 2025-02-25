@@ -30,7 +30,7 @@ const Login = ({ setCurrentPage }) => {
       setLoading(true);
       await login(formData.email, formData.password);
       toast.success('Logged in successfully!');
-      setCurrentPage('template2');
+      setCurrentPage('home');
     } catch (error) {
       toast.error(error.message || 'Failed to login');
     } finally {
@@ -100,10 +100,17 @@ const Login = ({ setCurrentPage }) => {
 
             <button 
               type="submit" 
-              className={`btn btn-primary w-full ${loading ? 'loading' : ''}`}
+              className="btn btn-primary w-full"
               disabled={loading}
             >
-              {loading ? 'Signing in...' : 'Sign In'}
+              {loading ? (
+                <div className="flex items-center justify-center gap-2">
+                  <span className="loading loading-spinner loading-md"></span>
+                  <span>Signing in...</span>
+                </div>
+              ) : (
+                'Sign In'
+              )}
             </button>
           </form>
           <p className="mt-4">
