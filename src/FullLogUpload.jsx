@@ -3,7 +3,7 @@ import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { useAuth } from './contexts/AuthContext';
 import { toast } from 'react-toastify';
-import { API_URL } from './config/urls';
+import { API_URL } from './config/api';
 import { getUserPokerLogs, uploadPokerLogs } from './services/analytics';
 import './index.css';
 

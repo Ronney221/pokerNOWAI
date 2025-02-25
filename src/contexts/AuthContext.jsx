@@ -11,7 +11,7 @@ import {
   checkActionCode
 } from 'firebase/auth';
 import { auth } from '../firebase';
-import { APP_URL } from '../config/urls';
+import { APP_URL } from '../config/api';
 import { saveUserData } from '../services/user';
 
 const AuthContext = createContext();

@@ -1,4 +1,4 @@
-import { API_URL } from '../config/urls';
+import { API_URL } from '../config/api';
 
 export const uploadPokerLogs = async (files, userId) => {
   try {
@@ -57,4 +57,4 @@ export const getUserPokerLogs = async (userId) => {
     console.error('API Error:', error);
     throw error;
   }
-}; 
+};

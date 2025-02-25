@@ -1,5 +1,6 @@
 import { initializeApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
+import { APP_URL } from './config/api';
 
 // Your web app's Firebase configuration
 const firebaseConfig = {
@@ -13,4 +14,16 @@ const firebaseConfig = {
 
 // Initialize Firebase
 const app = initializeApp(firebaseConfig);
-export const auth = getAuth(app); 
+const auth = getAuth(app);
+
+// Set custom parameters for auth actions
+auth.useDeviceLanguage();
+if (process.env.NODE_ENV === 'production') {
+  auth.config = {
+    ...auth.config,
+    authDomain: 'pokernowai.com',
+    redirectUrl: `${APP_URL}/verify-email`
+  };
+}
+
+export { auth }; 
