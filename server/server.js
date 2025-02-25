@@ -57,9 +57,14 @@ app.options('*', cors(corsOptions));
 mongoose.connect(process.env.MONGODB_URI)
 .then(() => {
   console.log('Successfully connected to MongoDB.');
+  // Log connection details for debugging
+  console.log('MongoDB connection state:', mongoose.connection.readyState);
+  console.log('MongoDB host:', mongoose.connection.host);
+  console.log('MongoDB database:', mongoose.connection.name);
 })
 .catch((error) => {
   console.error('Error connecting to MongoDB:', error);
+  console.error('Connection string used:', process.env.MONGODB_URI.replace(/:[^:/@]+@/, ':****@')); // Hide password
   process.exit(1);
 });
 
@@ -77,19 +82,46 @@ app.get('/api/test', (req, res) => {
 
 // Add console.logs to debug
 app.post('/api/users/saveUserData', async (req, res) => {
-  console.log('Request body:', req.body); // See what data is being received
+  console.log('=== START saveUserData request ===');
+  console.log('Request headers:', req.headers);
+  console.log('Request body:', req.body);
   try {
     // ... your code
     console.log('Data saved successfully');
   } catch (error) {
-    console.error('Error:', error); // See detailed error messages
+    console.error('=== ERROR in saveUserData ===');
+    console.error('Error name:', error.name);
+    console.error('Error message:', error.message);
+    console.error('Error stack:', error.stack);
+    console.error('Error code:', error.code);
+    if (error.errors) {
+      console.error('Validation errors:', JSON.stringify(error.errors, null, 2));
+    }
+    console.error('=== END ERROR ===');
+    res.status(500).json({ 
+      error: 'Something went wrong!',
+      details: error.message,
+      code: error.code
+    });
   }
 });
 
 // Error handling middleware
 app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({ error: 'Something went wrong!' });
+  console.error('=== Global Error Handler ===');
+  console.error('Error:', err);
+  console.error('Stack:', err.stack);
+  console.error('Request path:', req.path);
+  console.error('Request method:', req.method);
+  console.error('Request headers:', req.headers);
+  console.error('Request body:', req.body);
+  console.error('=== End Global Error Handler ===');
+  
+  res.status(500).json({ 
+    error: 'Something went wrong!',
+    details: err.message,
+    code: err.code
+  });
 });
 
 const PORT = process.env.PORT || 5000;
