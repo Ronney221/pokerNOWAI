@@ -1,13 +1,13 @@
 // Base URLs for the application
 const isProd = process.env.NODE_ENV === 'production';
 const DOMAIN = isProd ? 'pokernowai.com' : 'localhost';
-const WWW_DOMAIN = isProd ? 'www.pokernowai.com' : 'localhost';
+const WWW_DOMAIN = isProd ? 'pokernowai.com' : 'localhost';
 const CLIENT_PORT = '5173';
 const API_PORT = '5000';
 
 // In production, use relative path for API to handle both domain and subdomain access
 export const APP_URL = isProd
-  ? `https://${WWW_DOMAIN}`  // Use www subdomain for consistency
+  ? `https://${DOMAIN}`  // Use non-www domain to match Firebase config
   : `http://${DOMAIN}:${CLIENT_PORT}`;
 
 export const API_URL = isProd

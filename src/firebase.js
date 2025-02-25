@@ -18,12 +18,8 @@ const auth = getAuth(app);
 
 // Set custom parameters for auth actions
 auth.useDeviceLanguage();
-if (process.env.NODE_ENV === 'production') {
-  auth.config = {
-    ...auth.config,
-    authDomain: 'pokernowai.com',
-    redirectUrl: `${APP_URL}/verify-email`
-  };
-}
+
+// No need to set custom auth domain, use the one from the environment variables
+// Let Firebase handle the redirects with the proper authDomain
 
 export { auth }; 
