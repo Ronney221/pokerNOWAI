@@ -4,8 +4,8 @@ const dotenv = require('dotenv');
 const path = require('path');
 const mongoose = require('mongoose');
 
-// Load environment variables from server/.env
-dotenv.config({ path: path.join(__dirname, '.env') });
+// Load environment variables from root .env
+dotenv.config({ path: path.join(__dirname, '../.env') });
 
 // Verify environment variables are loaded
 if (!process.env.MONGODB_URI) {
@@ -18,7 +18,7 @@ const app = express();
 // CORS configuration
 const corsOptions = {
   origin: process.env.NODE_ENV === 'production' 
-    ? ['https://pokernowai.vercel.app', 'https://www.pokernowai.vercel.app'] 
+    ? ['https://pokernowai.com', 'https://www.pokernowai.com'] 
     : 'http://localhost:5173',
   credentials: true,
   optionsSuccessStatus: 200

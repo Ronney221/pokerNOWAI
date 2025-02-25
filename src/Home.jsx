@@ -7,7 +7,7 @@ const Home = ({ setCurrentPage }) => {
   const { currentUser } = useAuth();
 
   const handleGetStarted = () => {
-    setCurrentPage(currentUser ? 'template1' : 'register');
+    setCurrentPage(currentUser ? 'fullLogUpload' : 'register');
   };
 
   return (

@@ -5,12 +5,15 @@ const User = require('../models/User');
 // Create or update user
 router.post('/saveUserData', async (req, res) => {
   try {
+    console.log('Received user data:', req.body);
     const { firebaseUid, email, username, displayName } = req.body;
     
     if (!firebaseUid || !email) {
+      console.error('Missing required fields:', { firebaseUid, email });
       return res.status(400).json({ error: 'Missing required fields' });
     }
 
+    console.log('Attempting to save/update user with firebaseUid:', firebaseUid);
     const user = await User.findOneAndUpdate(
       { firebaseUid },
       { 
@@ -26,9 +29,14 @@ router.post('/saveUserData', async (req, res) => {
       }
     );
     
+    console.log('User saved successfully:', user);
     res.status(200).json({ user });
   } catch (error) {
-    console.error('Error saving user data:', error);
+    console.error('Detailed error saving user data:', {
+      error: error.message,
+      stack: error.stack,
+      body: req.body
+    });
     res.status(500).json({ error: error.message });
   }
 });
