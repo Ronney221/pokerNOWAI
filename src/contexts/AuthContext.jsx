@@ -37,10 +37,12 @@ export function AuthProvider({ children }) {
       }
 
       // Send email verification with dynamic URL
-      await sendEmailVerification(user, {
+      const actionCodeSettings = {
         url: `${APP_URL}/verify-email`,
-        handleCodeInApp: true,
-      });
+        handleCodeInApp: true
+      };
+
+      await sendEmailVerification(user, actionCodeSettings);
 
       // Save user data to MongoDB
       try {
@@ -92,10 +94,11 @@ export function AuthProvider({ children }) {
   async function resendVerificationEmail() {
     if (currentUser && !currentUser.emailVerified) {
       try {
-        await sendEmailVerification(currentUser, {
+        const actionCodeSettings = {
           url: `${APP_URL}/verify-email`,
-          handleCodeInApp: true,
-        });
+          handleCodeInApp: true
+        };
+        await sendEmailVerification(currentUser, actionCodeSettings);
         return true;
       } catch (error) {
         throw new Error(error.message);
@@ -105,9 +108,10 @@ export function AuthProvider({ children }) {
 
   async function resetPassword(email) {
     try {
-      await sendPasswordResetEmail(auth, email, {
-        url: `${APP_URL}/login`,
-      });
+      const actionCodeSettings = {
+        url: `${APP_URL}/login`
+      };
+      await sendPasswordResetEmail(auth, email, actionCodeSettings);
       return true;
     } catch (error) {
       throw new Error(error.message);

@@ -3,6 +3,7 @@ import React, { useState, useCallback } from 'react';
 import { useDropzone } from 'react-dropzone';
 import { useAuth } from './contexts/AuthContext';
 import { toast } from 'react-toastify';
+import { API_URL } from './config/urls';
 import './index.css';
 
 const FullLogUpload = () => {
@@ -183,7 +184,7 @@ const FullLogUpload = () => {
         gameDate: file.gameDate
       }));
 
-      const response = await fetch('http://localhost:5000/api/analysis/upload-logs', {
+      const response = await fetch(`${API_URL}/analysis/upload-logs`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
