@@ -33,10 +33,7 @@ const userSchema = new mongoose.Schema({
   }
 });
 
-// Create indexes
-userSchema.index({ firebaseUid: 1 });
-userSchema.index({ username: 1 });
-userSchema.index({ email: 1 });
+// No need for additional index declarations since we're using unique: true in the schema fields
 
 const User = mongoose.model('User', userSchema);
 
