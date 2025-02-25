@@ -24,11 +24,7 @@ const app = express();
 
 // CORS configuration
 const allowedOrigins = process.env.NODE_ENV === 'production'
-  ? [
-      'https://pokernowai.com',
-      'https://www.pokernowai.com',
-      'https://api.pokernowai.com'
-    ]
+  ? ['https://pokernowai.com', 'https://www.pokernowai.com']
   : ['http://localhost:5173'];
 
 const corsOptions = {
@@ -44,6 +40,8 @@ const corsOptions = {
     }
   },
   credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
   optionsSuccessStatus: 200
 };
 
@@ -51,6 +49,9 @@ const corsOptions = {
 app.use(cors(corsOptions));
 app.use(express.json({ limit: '5mb' }));
 app.use(express.urlencoded({ limit: '5mb', extended: true }));
+
+// Handle OPTIONS preflight requests
+app.options('*', cors(corsOptions));
 
 // MongoDB Connection with Mongoose
 mongoose.connect(process.env.MONGODB_URI)
