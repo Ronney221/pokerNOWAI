@@ -5,13 +5,20 @@ const path = require('path');
 const mongoose = require('mongoose');
 
 // Load environment variables from root .env
-dotenv.config({ path: path.join(__dirname, '../.env') });
+const envPath = path.resolve(__dirname, '../.env');
+dotenv.config({ path: envPath });
 
 // Verify environment variables are loaded
 if (!process.env.MONGODB_URI) {
   console.error('MONGODB_URI is not defined in environment variables');
+  console.error('Looking for .env file at:', envPath);
   process.exit(1);
 }
+
+// Log environment variables (excluding sensitive data)
+console.log('Environment:', process.env.NODE_ENV);
+console.log('Port:', process.env.PORT);
+console.log('MongoDB connection:', process.env.MONGODB_URI ? 'Configured' : 'Missing');
 
 const app = express();
 

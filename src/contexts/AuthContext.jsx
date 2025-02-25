@@ -87,7 +87,7 @@ export function AuthProvider({ children }) {
     if (currentUser && !currentUser.emailVerified) {
       try {
         const actionCodeSettings = {
-          url: `${APP_URL}/verify-email`,
+          url: `${APP_URL}/home`,
           handleCodeInApp: true
         };
         await sendEmailVerification(currentUser, actionCodeSettings);
