@@ -18,7 +18,7 @@ const Analytics = () => {
           </div>
           <h1 className="text-4xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
             Advanced Analytics
-          </h1>
+              </h1>
           <p className="text-xl opacity-70 max-w-2xl mx-auto leading-relaxed">
             Detailed analysis and visualization of your poker performance.
             Get actionable insights that will transform your game.
