@@ -374,14 +374,22 @@ const Ledger = ({ setCurrentPage }) => {
           <div className="max-w-5xl mx-auto">
             <div className="card bg-base-100 shadow-xl overflow-hidden">
               <div className="p-8">
-                {/* Denomination Selection */}
-                <div className="mb-8">
-                  <div className="form-control">
-                    <label className="label">
-                      <span className="label-text font-medium">Game Denomination</span>
-                    </label>
-                    <div className="flex gap-4">
-                      <label className="flex items-center gap-2 cursor-pointer">
+                {/* Step 1: Denomination Selection */}
+                <div className={`space-y-6 ${aliasGroups.length > 0 ? 'opacity-50 pointer-events-none' : ''}`}>
+                  <div className="flex items-center">
+                    <div className="w-10 h-10 rounded-full bg-primary/20 text-primary flex items-center justify-center mr-4">
+                      <span className="text-lg font-bold">1</span>
+                    </div>
+                    <h2 className="text-2xl font-semibold">Select Game Denomination</h2>
+                  </div>
+                  
+                  <p className="text-base-content/70 pl-14">
+                    Choose whether your poker game is played with cents (100 cents = $1) or dollars.
+                  </p>
+                  
+                  <div className="pl-14 mt-4">
+                    <div className="flex gap-6">
+                      <label className="flex items-center gap-3 p-4 border border-base-300 rounded-lg cursor-pointer hover:bg-base-200/50 transition-colors">
                         <input
                           type="radio"
                           name="denomination"
@@ -390,9 +398,12 @@ const Ledger = ({ setCurrentPage }) => {
                           onChange={handleDenominationChange}
                           className="radio radio-primary"
                         />
-                        <span>Cents (divide by 100 to display in dollars)</span>
+                        <div>
+                          <div className="font-medium">Cents</div>
+                          <div className="text-sm text-base-content/70">example: 0.25/0.50</div>
+                        </div>
                       </label>
-                      <label className="flex items-center gap-2 cursor-pointer">
+                      <label className="flex items-center gap-3 p-4 border border-base-300 rounded-lg cursor-pointer hover:bg-base-200/50 transition-colors">
                         <input
                           type="radio"
                           name="denomination"
@@ -401,22 +412,20 @@ const Ledger = ({ setCurrentPage }) => {
                           onChange={handleDenominationChange}
                           className="radio radio-primary"
                         />
-                        <span>Dollars (no conversion needed)</span>
+                        <div>
+                          <div className="font-medium">Dollars</div>
+                          <div className="text-sm text-base-content/70">example: 1/2</div>
+                        </div>
                       </label>
                     </div>
-                    <label className="label">
-                      <span className="label-text-alt text-base-content/60">
-                        Select whether your game is played with cents (e.g., 100 cents = $1) or dollars
-                      </span>
-                    </label>
                   </div>
                 </div>
 
-                {/* Step 1: Upload CSV */}
-                <div className={`space-y-6 ${aliasGroups.length > 0 ? 'opacity-50 pointer-events-none' : ''}`}>
+                {/* Step 2: Upload CSV */}
+                <div className={`space-y-6 mt-10 border-t border-base-200 pt-10 ${aliasGroups.length > 0 ? 'opacity-50 pointer-events-none' : ''}`}>
                   <div className="flex items-center">
                     <div className="w-10 h-10 rounded-full bg-primary/20 text-primary flex items-center justify-center mr-4">
-                      <span className="text-lg font-bold">1</span>
+                      <span className="text-lg font-bold">2</span>
                     </div>
                     <h2 className="text-2xl font-semibold">Upload your CSV file</h2>
                   </div>
@@ -426,7 +435,7 @@ const Ledger = ({ setCurrentPage }) => {
                   </p>
                   
                   <div 
-                    className={`flex flex-col items-center px-6 py-10 mt-2 bg-base-200 text-center rounded-xl cursor-pointer border-2 border-dashed ${isDragging ? 'border-primary border-opacity-70 bg-primary bg-opacity-5' : 'border-base-content border-opacity-10 hover:border-primary hover:border-opacity-50'} transition-colors`}
+                    className={`flex flex-col items-center px-6 py-10 mt-2 ml-14 bg-base-200 text-center rounded-xl cursor-pointer border-2 border-dashed ${isDragging ? 'border-primary border-opacity-70 bg-primary bg-opacity-5' : 'border-base-content border-opacity-10 hover:border-primary hover:border-opacity-50'} transition-colors`}
                     onDragEnter={handleDragEnter}
                     onDragOver={handleDragOver}
                     onDragLeave={handleDragLeave}
@@ -472,12 +481,12 @@ const Ledger = ({ setCurrentPage }) => {
                   </div>
                 )}
 
-                {/* Step 2: Fuzzy grouping suggestions */}
+                {/* Step 3: Fuzzy grouping suggestions */}
                 {aliasGroups.length > 0 && !groupingConfirmed && (
                   <div className="mt-10 border-t border-base-200 pt-10">
                     <div className="flex items-center mb-6">
                       <div className="w-10 h-10 rounded-full bg-primary/20 text-primary flex items-center justify-center mr-4">
-                        <span className="text-lg font-bold">2</span>
+                        <span className="text-lg font-bold">3</span>
                       </div>
                       <h2 className="text-2xl font-semibold">Confirm Player Names</h2>
                     </div>
@@ -549,12 +558,12 @@ const Ledger = ({ setCurrentPage }) => {
                   </div>
                 )}
 
-                {/* Step 3: Confirmed groupings displayed in a table */}
+                {/* Step 4: Confirmed groupings displayed in a table */}
                 {groupingConfirmed && (
                   <div className="mt-10 border-t border-base-200 pt-10">                    
                     <div className="flex items-center mb-6">
                       <div className="w-10 h-10 rounded-full bg-primary/20 text-primary flex items-center justify-center mr-4">
-                        <span className="text-lg font-bold">3</span>
+                        <span className="text-lg font-bold">4</span>
                       </div>
                       <h2 className="text-2xl font-semibold">Review Player Data</h2>
                     </div>
@@ -610,12 +619,12 @@ const Ledger = ({ setCurrentPage }) => {
                   </div>
                 )}
 
-                {/* Step 4: Settlement Transactions displayed in a table */}
+                {/* Step 5: Settlement Transactions displayed in a table */}
                 {transactions.length > 0 && (
                   <div className="mt-10 border-t border-base-200 pt-10">
                     <div className="flex items-center mb-6">
                       <div className="w-10 h-10 rounded-full bg-primary/20 text-primary flex items-center justify-center mr-4">
-                        <span className="text-lg font-bold">4</span>
+                        <span className="text-lg font-bold">5</span>
                       </div>
                       <h2 className="text-2xl font-semibold">Settlement Transactions</h2>
                     </div>
