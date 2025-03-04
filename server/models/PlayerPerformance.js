@@ -15,7 +15,7 @@ const PlayerPerformanceSchema = new Schema({
   ledgerId: {
     type: Schema.Types.ObjectId,
     ref: 'Ledger',
-    required: true
+    required: false
   },
   playerName: {
     type: String,
@@ -47,6 +47,10 @@ const PlayerPerformanceSchema = new Schema({
     type: String,
     enum: ['cents', 'dollars'],
     default: 'cents'
+  },
+  isManualEntry: {
+    type: Boolean,
+    default: false
   },
   createdAt: {
     type: Date,

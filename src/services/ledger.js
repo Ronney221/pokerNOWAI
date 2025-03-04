@@ -135,22 +135,13 @@ export const getSharedLedgerById = async (ledgerId) => {
 };
 
 /**
- * Track player performance from a ledger
- * 
- * @param {Object} performanceData - Player performance data
- * @param {string} performanceData.firebaseUid - Firebase UID of the user
- * @param {string} performanceData.ledgerId - ID of the ledger
- * @param {string} performanceData.playerName - Selected player name
- * @param {string} performanceData.sessionName - Name of the poker session
- * @param {Date} performanceData.sessionDate - Date of the session
- * @param {number} performanceData.buyIn - Player's buy-in amount
- * @param {number} performanceData.cashOut - Player's cash-out amount
- * @param {string} performanceData.denomination - Game denomination ('cents' or 'dollars')
- * @returns {Promise<Object>} - Response from the server
+ * Track player performance
+ * @param {Object} performanceData - The performance data to track
+ * @returns {Promise<Object>} The saved performance data
  */
 export const trackPlayerPerformance = async (performanceData) => {
   try {
-    console.log('Tracking player performance:', performanceData);
+    console.log('Tracking performance:', performanceData);
     const response = await fetch(`${API_URL}/analysis/track-performance`, {
       method: 'POST',
       headers: {
@@ -158,13 +149,13 @@ export const trackPlayerPerformance = async (performanceData) => {
       },
       body: JSON.stringify(performanceData),
     });
-    
+
     if (!response.ok) {
-      const errorData = await response.text();
+      const errorData = await response.json();
       console.error('Server error response:', errorData);
-      throw new Error(errorData || 'Failed to track performance');
+      throw new Error(JSON.stringify(errorData));
     }
-    
+
     const data = await response.json();
     console.log('Performance tracked successfully:', data);
     return data;
@@ -194,6 +185,68 @@ export const getPlayerPerformanceHistory = async (firebaseUid) => {
     return data.performances || [];
   } catch (error) {
     console.error('API Error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Update player performance data
+ * @param {string} performanceId - The ID of the performance record
+ * @param {Object} performanceData - The updated performance data
+ * @returns {Promise<Object>} Updated performance record
+ */
+export const updatePlayerPerformance = async (performanceId, performanceData) => {
+  try {
+    console.log('Updating performance:', performanceId, performanceData);
+    const response = await fetch(`/api/analysis/performance/${performanceId}`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(performanceData),
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Error updating performance:', errorData);
+      throw new Error(errorData.error || 'Failed to update performance data');
+    }
+
+    const data = await response.json();
+    console.log('Performance updated successfully:', data);
+    return data.performance;
+  } catch (error) {
+    console.error('Error in updatePlayerPerformance:', error);
+    throw error;
+  }
+};
+
+/**
+ * Delete player performance data
+ * @param {string} performanceId - The ID of the performance record
+ * @returns {Promise<Object>} Success message
+ */
+export const deletePlayerPerformance = async (performanceId) => {
+  try {
+    console.log('Deleting performance:', performanceId);
+    const response = await fetch(`/api/analysis/performance/${performanceId}`, {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      console.error('Error deleting performance:', errorData);
+      throw new Error(errorData.error || 'Failed to delete performance data');
+    }
+
+    const data = await response.json();
+    console.log('Performance deleted successfully:', data);
+    return data;
+  } catch (error) {
+    console.error('Error in deletePlayerPerformance:', error);
     throw error;
   }
 }; 

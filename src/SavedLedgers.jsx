@@ -183,15 +183,31 @@ const SavedLedgers = ({ setCurrentPage }) => {
     try {
       setTrackingLoading(true);
       
+      // Normalize monetary values to whole dollars
+      // If it's a cents game, round to nearest dollar
+      // If it's a dollars game, use as is
+      const isDollarsGame = selectedLedger.denomination === 'dollars';
+      
+      // For cents games, divide by 100 to get dollar value, then round to nearest whole dollar
+      // For dollar games, just use the value directly
+      // Multiply by 100 to convert to cents for storage
+      const buyInCents = isDollarsGame
+        ? Math.round(selectedPlayer.buyIn)  * 100  // Dollar games - keep as whole dollars
+        : Math.round(selectedPlayer.buyIn / 100) * 100;  // Cents games - round to nearest dollar
+      
+      const cashOutCents = isDollarsGame
+        ? Math.round(selectedPlayer.cashOut) * 100  // Dollar games - keep as whole dollars
+        : Math.round(selectedPlayer.cashOut / 100) * 100;  // Cents games - round to nearest dollar
+      
       const performanceData = {
         firebaseUid: currentUser.uid,
         ledgerId: selectedLedger._id,
         playerName: selectedPlayer.name,
         sessionName: selectedLedger.sessionName,
         sessionDate: selectedLedger.sessionDate,
-        buyIn: selectedPlayer.buyIn,
-        cashOut: selectedPlayer.cashOut,
-        denomination: selectedLedger.denomination || 'cents'
+        buyIn: buyInCents,
+        cashOut: cashOutCents,
+        denomination: 'dollars' // Always use dollars as display denomination
       };
       
       await trackPlayerPerformance(performanceData);
@@ -417,6 +433,18 @@ const SavedLedgers = ({ setCurrentPage }) => {
                       </div>
                       <div className="card-actions justify-end bg-base-200 p-4">
                         <button className="btn btn-sm btn-ghost">View Details</button>
+                        {currentUser && (
+                          <button 
+                            className="btn btn-sm btn-primary"
+                            onClick={(e) => {
+                              e.stopPropagation(); // Prevent opening the detail view
+                              setSelectedLedger(ledger);
+                              handleOpenTrackModal();
+                            }}
+                          >
+                            Track Performance
+                          </button>
+                        )}
                       </div>
                     </div>
                   );
@@ -585,9 +613,9 @@ const SavedLedgers = ({ setCurrentPage }) => {
           {/* Track Performance Modal */}
           {isTrackModalOpen && selectedLedger && (
             <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-11/12 md:w-3/4 lg:w-1/2 max-h-[90vh] overflow-y-auto">
-                <h3 className="text-xl font-bold mb-4">Track Your Performance</h3>
-                <p className="mb-4">Select your player from the list below:</p>
+              <div className="bg-base-100 p-6 rounded-lg shadow-lg w-11/12 md:w-3/4 lg:w-1/2 max-h-[90vh] overflow-y-auto">
+                <h3 className="text-xl font-bold mb-4 text-base-content">Track Your Performance</h3>
+                <p className="mb-4 text-base-content">Select your player from the list below:</p>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
                   {selectedLedger.players.map((player) => (
@@ -595,16 +623,16 @@ const SavedLedgers = ({ setCurrentPage }) => {
                       key={player.name}
                       className={`border p-4 rounded-lg cursor-pointer transition-all duration-200 ${
                         selectedPlayer && selectedPlayer.name === player.name 
-                          ? 'border-primary bg-primary bg-opacity-10' 
-                          : 'hover:border-gray-400'
+                          ? 'border-primary bg-primary/10' 
+                          : 'hover:border-gray-400 border-base-300'
                       }`}
                       onClick={() => handlePlayerSelect(player)}
                     >
-                      <h4 className="font-bold">{player.name}</h4>
+                      <h4 className="font-bold text-base-content">{player.name}</h4>
                       <div className="mt-2">
-                        <p>Buy-in: ${formatMoney(player.buyIn, selectedLedger.denomination)}</p>
-                        <p>Cash-out: ${formatMoney(player.cashOut, selectedLedger.denomination)}</p>
-                        <p className={player.cashOut - player.buyIn >= 0 ? 'text-green-500' : 'text-red-500'}>
+                        <p className="text-base-content">Buy-in: ${formatMoney(player.buyIn, selectedLedger.denomination)}</p>
+                        <p className="text-base-content">Cash-out: ${formatMoney(player.cashOut, selectedLedger.denomination)}</p>
+                        <p className={`${player.cashOut - player.buyIn >= 0 ? 'text-success' : 'text-error'}`}>
                           Net: ${formatMoney(player.cashOut - player.buyIn, selectedLedger.denomination)}
                         </p>
                       </div>
@@ -614,7 +642,7 @@ const SavedLedgers = ({ setCurrentPage }) => {
                 
                 <div className="flex justify-end gap-2">
                   <button 
-                    className="btn btn-ghost"
+                    className="btn btn-ghost text-base-content"
                     onClick={() => setIsTrackModalOpen(false)}
                   >
                     Cancel
@@ -624,7 +652,7 @@ const SavedLedgers = ({ setCurrentPage }) => {
                     onClick={handleTrackPerformance}
                     disabled={!selectedPlayer || trackingLoading}
                   >
-                    {trackingLoading ? 'Tracking...' : 'Track Performance'}
+                    {trackingLoading ? 'Tracking...' : 'Import Game'}
                   </button>
                 </div>
               </div>

@@ -333,17 +333,17 @@ router.post('/track-performance', async (req, res) => {
       playerName, 
       sessionName, 
       sessionDate, 
-      buyIn, 
-      cashOut, 
-      denomination 
+      buyIn = 0, 
+      cashOut = 0, 
+      denomination = 'cents',
+      isManualEntry = false
     } = req.body;
     
-    if (!firebaseUid || !ledgerId || !playerName) {
+    if (!firebaseUid || !playerName) {
       return res.status(400).json({ 
         error: 'Missing required fields', 
         details: { 
           firebaseUid: !firebaseUid, 
-          ledgerId: !ledgerId,
           playerName: !playerName
         } 
       });
@@ -355,10 +355,13 @@ router.post('/track-performance', async (req, res) => {
       return res.status(404).json({ error: 'User not found' });
     }
 
-    // Check if the ledger exists
-    const ledger = await Ledger.findById(ledgerId);
-    if (!ledger) {
-      return res.status(404).json({ error: 'Ledger not found' });
+    // Only check if the ledger exists if this is not a manual entry
+    let ledgerDocument = null;
+    if (!isManualEntry && ledgerId) {
+      ledgerDocument = await Ledger.findById(ledgerId);
+      if (!ledgerDocument) {
+        return res.status(404).json({ error: 'Ledger not found' });
+      }
     }
 
     // Calculate profit
@@ -368,14 +371,15 @@ router.post('/track-performance', async (req, res) => {
     const performance = new PlayerPerformance({
       userId: user._id,
       firebaseUid,
-      ledgerId,
+      ledgerId: isManualEntry ? null : ledgerId, // Set to null for manual entries
       playerName,
       sessionName,
       sessionDate,
       buyIn,
       cashOut,
       profit,
-      denomination
+      denomination,
+      isManualEntry
     });
 
     await performance.save();
@@ -400,6 +404,72 @@ router.get('/performance/:firebaseUid', async (req, res) => {
     res.json({ performances });
   } catch (error) {
     console.error('Error fetching performance history:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Update player performance data
+router.put('/performance/:performanceId', async (req, res) => {
+  try {
+    const { performanceId } = req.params;
+    const { 
+      playerName, 
+      sessionName, 
+      sessionDate, 
+      buyIn, 
+      cashOut, 
+      denomination = 'cents' 
+    } = req.body;
+
+    // Validate required fields
+    if (!playerName) {
+      return res.status(400).json({ error: 'Player name is required' });
+    }
+
+    // Calculate profit
+    const profit = cashOut - buyIn;
+
+    // Find and update the performance record
+    const performance = await PlayerPerformance.findById(performanceId);
+    
+    if (!performance) {
+      return res.status(404).json({ error: 'Performance record not found' });
+    }
+
+    // Update the fields
+    performance.playerName = playerName;
+    if (sessionName) performance.sessionName = sessionName;
+    if (sessionDate) performance.sessionDate = sessionDate;
+    if (buyIn !== undefined) performance.buyIn = buyIn;
+    if (cashOut !== undefined) performance.cashOut = cashOut;
+    if (profit !== undefined) performance.profit = profit;
+    if (denomination) performance.denomination = denomination;
+
+    await performance.save();
+
+    res.json({ success: true, performance });
+  } catch (error) {
+    console.error('Error updating performance data:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete player performance data
+router.delete('/performance/:performanceId', async (req, res) => {
+  try {
+    const { performanceId } = req.params;
+    
+    const performance = await PlayerPerformance.findById(performanceId);
+    
+    if (!performance) {
+      return res.status(404).json({ error: 'Performance record not found' });
+    }
+
+    await PlayerPerformance.findByIdAndDelete(performanceId);
+
+    res.json({ success: true, message: 'Performance record deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting performance data:', error);
     res.status(500).json({ error: error.message });
   }
 });
