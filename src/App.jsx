@@ -11,6 +11,7 @@ import VerifyEmail from './VerifyEmail';
 import Ledger from './Ledger';
 import SavedLedgers from './SavedLedgers';
 import SharedLedger from './SharedLedger';
+import Bankroll from './Bankroll';
 import Home from './Home';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
@@ -95,6 +96,9 @@ function App() {
       break;
     case "shared-ledger":
       content = <SharedLedger ledgerId={sharedLedgerId} setCurrentPage={setCurrentPage} />;
+      break;
+    case "bankroll":
+      content = <Bankroll />;
       break;
     case "fullLogUpload":
       content = <FullLogUpload />;

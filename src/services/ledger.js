@@ -132,4 +132,68 @@ export const getSharedLedgerById = async (ledgerId) => {
     console.error('API Error:', error);
     throw error;
   }
+};
+
+/**
+ * Track player performance from a ledger
+ * 
+ * @param {Object} performanceData - Player performance data
+ * @param {string} performanceData.firebaseUid - Firebase UID of the user
+ * @param {string} performanceData.ledgerId - ID of the ledger
+ * @param {string} performanceData.playerName - Selected player name
+ * @param {string} performanceData.sessionName - Name of the poker session
+ * @param {Date} performanceData.sessionDate - Date of the session
+ * @param {number} performanceData.buyIn - Player's buy-in amount
+ * @param {number} performanceData.cashOut - Player's cash-out amount
+ * @param {string} performanceData.denomination - Game denomination ('cents' or 'dollars')
+ * @returns {Promise<Object>} - Response from the server
+ */
+export const trackPlayerPerformance = async (performanceData) => {
+  try {
+    console.log('Tracking player performance:', performanceData);
+    const response = await fetch(`${API_URL}/analysis/track-performance`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(performanceData),
+    });
+    
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error('Server error response:', errorData);
+      throw new Error(errorData || 'Failed to track performance');
+    }
+    
+    const data = await response.json();
+    console.log('Performance tracked successfully:', data);
+    return data;
+  } catch (error) {
+    console.error('API Error:', error);
+    throw error;
+  }
+};
+
+/**
+ * Get player performance history
+ * 
+ * @param {string} firebaseUid - Firebase UID of the user
+ * @returns {Promise<Array>} - Array of performance data
+ */
+export const getPlayerPerformanceHistory = async (firebaseUid) => {
+  try {
+    const response = await fetch(`${API_URL}/analysis/performance/${firebaseUid}`);
+    
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error('Server error response:', errorData);
+      throw new Error(errorData || 'Failed to get performance history');
+    }
+    
+    const data = await response.json();
+    return data.performances || [];
+  } catch (error) {
+    console.error('API Error:', error);
+    throw error;
+  }
 }; 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { getUserLedgers, getLedgerById, deleteLedgerById } from './services/ledger';
+import { getUserLedgers, getLedgerById, deleteLedgerById, trackPlayerPerformance } from './services/ledger';
 import { useAuth } from './contexts/AuthContext';
 import { toast } from 'react-toastify';
 
@@ -12,6 +12,9 @@ const SavedLedgers = ({ setCurrentPage }) => {
   const [shareUrl, setShareUrl] = useState('');
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [ledgerToDelete, setLedgerToDelete] = useState(null);
+  const [isTrackModalOpen, setIsTrackModalOpen] = useState(false);
+  const [selectedPlayer, setSelectedPlayer] = useState(null);
+  const [trackingLoading, setTrackingLoading] = useState(false);
   const { currentUser } = useAuth();
 
   // Helper: Format money amount based on denomination
@@ -146,6 +149,61 @@ const SavedLedgers = ({ setCurrentPage }) => {
     if (!players || players.length === 0) return null;
     return players.reduce((max, player) => 
       (!max || (player.cashOut - player.buyIn) > (max.cashOut - max.buyIn)) ? player : max, null);
+  };
+
+  // Handle opening the track performance modal
+  const handleOpenTrackModal = () => {
+    if (!currentUser) {
+      toast.info('Please sign in to track your performance');
+      setCurrentPage('login');
+      return;
+    }
+    
+    if (!selectedLedger || !selectedLedger.players || selectedLedger.players.length === 0) {
+      toast.error('No players found in this ledger');
+      return;
+    }
+    
+    setSelectedPlayer(null);
+    setIsTrackModalOpen(true);
+  };
+
+  // Handle player selection
+  const handlePlayerSelect = (player) => {
+    setSelectedPlayer(player);
+  };
+
+  // Handle tracking performance
+  const handleTrackPerformance = async () => {
+    if (!selectedPlayer) {
+      toast.error('Please select a player');
+      return;
+    }
+    
+    try {
+      setTrackingLoading(true);
+      
+      const performanceData = {
+        firebaseUid: currentUser.uid,
+        ledgerId: selectedLedger._id,
+        playerName: selectedPlayer.name,
+        sessionName: selectedLedger.sessionName,
+        sessionDate: selectedLedger.sessionDate,
+        buyIn: selectedPlayer.buyIn,
+        cashOut: selectedPlayer.cashOut,
+        denomination: selectedLedger.denomination || 'cents'
+      };
+      
+      await trackPlayerPerformance(performanceData);
+      
+      toast.success('Performance tracked successfully!');
+      setIsTrackModalOpen(false);
+    } catch (error) {
+      console.error('Error tracking performance:', error);
+      toast.error(`Failed to track performance: ${error.message}`);
+    } finally {
+      setTrackingLoading(false);
+    }
   };
 
   if (loading && !selectedLedger && ledgers.length === 0) {
@@ -397,7 +455,7 @@ const SavedLedgers = ({ setCurrentPage }) => {
           </div>
 
           {/* Session Overview Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
             <div className="card bg-base-100 shadow-xl">
               <div className="card-body">
                 <h3 className="text-sm opacity-70 font-medium">Total Players</h3>
@@ -416,6 +474,30 @@ const SavedLedgers = ({ setCurrentPage }) => {
                 <p className="text-3xl font-bold">
                   ${formatLedgerMoney(selectedLedger.transactions.reduce((total, tx) => total + parseFloat(tx.amount), 0), selectedLedger)}
                 </p>
+              </div>
+            </div>
+            <div className="card bg-primary shadow-xl">
+              <div className="card-body">
+                <h3 className="text-sm opacity-70 font-medium text-primary-content">Bankroll</h3>
+                {currentUser ? (
+                  <p className="text-3xl font-bold text-primary-content">
+                    <button 
+                      className="btn btn-ghost p-0 h-auto min-h-0 text-3xl font-bold normal-case text-primary-content hover:text-primary-content"
+                      onClick={handleOpenTrackModal}
+                    >
+                      Select Player
+                    </button>
+                  </p>
+                ) : (
+                  <p className="text-3xl font-bold text-primary-content">
+                    <button 
+                      className="btn btn-ghost p-0 h-auto min-h-0 text-3xl font-bold normal-case text-primary-content hover:text-primary-content"
+                      onClick={() => setCurrentPage('login')}
+                    >
+                      Sign in to track
+                    </button>
+                  </p>
+                )}
               </div>
             </div>
           </div>
@@ -499,6 +581,55 @@ const SavedLedgers = ({ setCurrentPage }) => {
               Share Results
             </button>
           </div>
+
+          {/* Track Performance Modal */}
+          {isTrackModalOpen && selectedLedger && (
+            <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+              <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-lg w-11/12 md:w-3/4 lg:w-1/2 max-h-[90vh] overflow-y-auto">
+                <h3 className="text-xl font-bold mb-4">Track Your Performance</h3>
+                <p className="mb-4">Select your player from the list below:</p>
+                
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+                  {selectedLedger.players.map((player) => (
+                    <div 
+                      key={player.name}
+                      className={`border p-4 rounded-lg cursor-pointer transition-all duration-200 ${
+                        selectedPlayer && selectedPlayer.name === player.name 
+                          ? 'border-primary bg-primary bg-opacity-10' 
+                          : 'hover:border-gray-400'
+                      }`}
+                      onClick={() => handlePlayerSelect(player)}
+                    >
+                      <h4 className="font-bold">{player.name}</h4>
+                      <div className="mt-2">
+                        <p>Buy-in: ${formatMoney(player.buyIn, selectedLedger.denomination)}</p>
+                        <p>Cash-out: ${formatMoney(player.cashOut, selectedLedger.denomination)}</p>
+                        <p className={player.cashOut - player.buyIn >= 0 ? 'text-green-500' : 'text-red-500'}>
+                          Net: ${formatMoney(player.cashOut - player.buyIn, selectedLedger.denomination)}
+                        </p>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                <div className="flex justify-end gap-2">
+                  <button 
+                    className="btn btn-ghost"
+                    onClick={() => setIsTrackModalOpen(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    className={`btn btn-primary ${trackingLoading ? 'loading' : ''}`}
+                    onClick={handleTrackPerformance}
+                    disabled={!selectedPlayer || trackingLoading}
+                  >
+                    {trackingLoading ? 'Tracking...' : 'Track Performance'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       )}
     </div>

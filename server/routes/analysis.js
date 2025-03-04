@@ -4,6 +4,7 @@ const multer = require('multer');
 const User = require('../models/User');
 const Analysis = require('../models/Analysis');
 const Ledger = require('../models/Ledger');
+const PlayerPerformance = require('../models/PlayerPerformance');
 const { spawn } = require('child_process');
 const path = require('path');
 const PokerLog = require('../models/PokerLog');
@@ -319,6 +320,86 @@ router.delete('/ledger/:ledgerId', async (req, res) => {
     });
   } catch (error) {
     console.error('Error deleting ledger:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Track player performance from a ledger
+router.post('/track-performance', async (req, res) => {
+  try {
+    const { 
+      firebaseUid, 
+      ledgerId, 
+      playerName, 
+      sessionName, 
+      sessionDate, 
+      buyIn, 
+      cashOut, 
+      denomination 
+    } = req.body;
+    
+    if (!firebaseUid || !ledgerId || !playerName) {
+      return res.status(400).json({ 
+        error: 'Missing required fields', 
+        details: { 
+          firebaseUid: !firebaseUid, 
+          ledgerId: !ledgerId,
+          playerName: !playerName
+        } 
+      });
+    }
+
+    // Find user
+    const user = await User.findOne({ firebaseUid });
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Check if the ledger exists
+    const ledger = await Ledger.findById(ledgerId);
+    if (!ledger) {
+      return res.status(404).json({ error: 'Ledger not found' });
+    }
+
+    // Calculate profit
+    const profit = cashOut - buyIn;
+
+    // Create performance record
+    const performance = new PlayerPerformance({
+      userId: user._id,
+      firebaseUid,
+      ledgerId,
+      playerName,
+      sessionName,
+      sessionDate,
+      buyIn,
+      cashOut,
+      profit,
+      denomination
+    });
+
+    await performance.save();
+
+    res.status(201).json({ 
+      success: true,
+      message: 'Performance tracked successfully',
+      performanceId: performance._id
+    });
+
+  } catch (error) {
+    console.error('Error tracking performance:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get player performance history
+router.get('/performance/:firebaseUid', async (req, res) => {
+  try {
+    const performances = await PlayerPerformance.findByFirebaseUid(req.params.firebaseUid);
+    
+    res.json({ performances });
+  } catch (error) {
+    console.error('Error fetching performance history:', error);
     res.status(500).json({ error: error.message });
   }
 });

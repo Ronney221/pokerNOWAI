@@ -21,6 +21,7 @@
     "autoprefixer": "^10.4.20",
     "chartjs-plugin-annotation": "^3.1.0",
     "daisyui": "^4.12.23",
+    "date-fns": "^4.1.0",
     "firebase": "^11.3.1",
     "mongodb": "^6.13.1",
     "mongoose": "^8.10.1",
