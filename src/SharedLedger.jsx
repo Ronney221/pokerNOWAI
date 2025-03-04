@@ -7,43 +7,59 @@ const SharedLedger = ({ ledgerId, setCurrentPage }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
+  // Helper: Format money amount based on denomination
+  const formatMoney = (amount, denomination = 'cents') => {
+    const divisor = denomination === 'cents' ? 100 : 1;
+    return (amount / divisor).toFixed(2);
+  };
+
+  const fetchLedgerData = async () => {
+    if (!ledgerId) {
+      setError('No ledger ID provided');
+      setLoading(false);
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const data = await getSharedLedgerById(ledgerId);
+      setLedger(data);
+    } catch (err) {
+      console.error('Error fetching shared ledger:', err);
+      setError('Failed to load the shared ledger. It may have been deleted or the link is invalid.');
+      toast.error('Failed to load shared ledger');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchLedgerData = async () => {
-      if (!ledgerId) {
-        setError('No ledger ID provided');
-        setLoading(false);
-        return;
-      }
-
-      try {
-        setLoading(true);
-        const ledgerData = await getSharedLedgerById(ledgerId);
-        setLedger(ledgerData);
-      } catch (err) {
-        console.error('Error fetching shared ledger:', err);
-        setError('Unable to load the shared ledger. It may have been deleted or the link is invalid.');
-        toast.error('Failed to load shared ledger');
-      } finally {
-        setLoading(false);
-      }
-    };
-
     fetchLedgerData();
   }, [ledgerId]);
 
   const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString('en-US', {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString(undefined, {
       year: 'numeric',
-      month: 'short',
-      day: 'numeric',
+      month: 'long',
+      day: 'numeric'
     });
   };
 
   const formatTime = (dateString) => {
-    return new Date(dateString).toLocaleTimeString('en-US', {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleTimeString(undefined, {
       hour: '2-digit',
       minute: '2-digit'
     });
+  };
+
+  // Display correct money values based on denomination
+  const formatLedgerMoney = (amount) => {
+    const denomination = ledger?.denomination || 'cents';
+    return formatMoney(amount, denomination);
   };
 
   if (loading) {
@@ -136,7 +152,7 @@ const SharedLedger = ({ ledgerId, setCurrentPage }) => {
             <div className="card-body">
               <h3 className="text-sm opacity-70 font-medium">Total Money Exchanged</h3>
               <p className="text-3xl font-bold">
-                ${ledger.transactions.reduce((total, tx) => total + parseFloat(tx.amount), 0).toFixed(2)}
+                ${formatLedgerMoney(ledger.transactions.reduce((total, tx) => total + parseFloat(tx.amount), 0))}
               </p>
             </div>
           </div>
@@ -165,10 +181,10 @@ const SharedLedger = ({ ledgerId, setCurrentPage }) => {
                     return (
                       <div key={index} className="grid grid-cols-12 p-4 hover:bg-base-200/50 transition-colors">
                         <div className="col-span-4 font-medium">{player.name}</div>
-                        <div className="col-span-2 text-right">${(player.buyIn / 100).toFixed(2)}</div>
-                        <div className="col-span-2 text-right">${(player.cashOut / 100).toFixed(2)}</div>
+                        <div className="col-span-2 text-right">${formatLedgerMoney(player.buyIn)}</div>
+                        <div className="col-span-2 text-right">${formatLedgerMoney(player.cashOut)}</div>
                         <div className={`col-span-4 text-right font-semibold ${profit > 0 ? 'text-success' : profit < 0 ? 'text-error' : ''}`}>
-                          ${(profit / 100).toFixed(2)}
+                          ${formatLedgerMoney(profit)}
                         </div>
                       </div>
                     );
@@ -200,7 +216,7 @@ const SharedLedger = ({ ledgerId, setCurrentPage }) => {
                     <div key={index} className="grid grid-cols-9 p-4 hover:bg-base-200/50 transition-colors">
                       <div className="col-span-3 font-medium">{tx.from}</div>
                       <div className="col-span-3 font-medium">{tx.to}</div>
-                      <div className="col-span-3 text-right text-success font-semibold">${parseFloat(tx.amount).toFixed(2)}</div>
+                      <div className="col-span-3 text-right text-success font-semibold">${formatLedgerMoney(parseFloat(tx.amount))}</div>
                     </div>
                   ))}
                 </div>

@@ -14,6 +14,12 @@ const SavedLedgers = ({ setCurrentPage }) => {
   const [ledgerToDelete, setLedgerToDelete] = useState(null);
   const { currentUser } = useAuth();
 
+  // Helper: Format money amount based on denomination
+  const formatMoney = (amount, denomination = 'cents') => {
+    const divisor = denomination === 'cents' ? 100 : 1;
+    return (amount / divisor).toFixed(2);
+  };
+
   useEffect(() => {
     // Redirect if not logged in
     if (!currentUser) {
@@ -50,6 +56,12 @@ const SavedLedgers = ({ setCurrentPage }) => {
     } finally {
       setLoading(false);
     }
+  };
+
+  // Format money display based on ledger's saved denomination
+  const formatLedgerMoney = (amount, ledger) => {
+    const denomination = ledger?.denomination || 'cents';
+    return formatMoney(amount, denomination);
   };
 
   const handleOpenDeleteModal = (e, ledger) => {
@@ -117,23 +129,23 @@ const SavedLedgers = ({ setCurrentPage }) => {
     });
   };
 
-  const calculateTotalProfit = (players) => {
+  // Calculate total profit across all players
+  const calculateTotalProfit = (players, ledger) => {
     if (!players || players.length === 0) return 0;
     
+    // Sum up all positive profits (winners only)
     const winners = players.filter(player => player.cashOut > player.buyIn);
-    return winners.reduce((total, player) => total + (player.cashOut - player.buyIn), 0) / 100;
+    const denomination = ledger?.denomination || 'cents';
+    const divisor = denomination === 'cents' ? 100 : 1;
+    
+    return winners.reduce((total, player) => total + (player.cashOut - player.buyIn), 0) / divisor;
   };
 
+  // Get player with highest profit
   const getPlayerWithHighestProfit = (players) => {
     if (!players || players.length === 0) return null;
-    
-    return players.reduce((highest, player) => {
-      const profit = player.cashOut - player.buyIn;
-      if (!highest || profit > (highest.cashOut - highest.buyIn)) {
-        return player;
-      }
-      return highest;
-    }, null);
+    return players.reduce((max, player) => 
+      (!max || (player.cashOut - player.buyIn) > (max.cashOut - max.buyIn)) ? player : max, null);
   };
 
   if (loading && !selectedLedger && ledgers.length === 0) {
@@ -295,7 +307,7 @@ const SavedLedgers = ({ setCurrentPage }) => {
               {/* Ledger Cards Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 max-w-6xl mx-auto">
                 {ledgers.map((ledger) => {
-                  const totalProfit = calculateTotalProfit(ledger.players);
+                  const totalProfit = calculateTotalProfit(ledger.players, ledger);
                   const topPlayer = getPlayerWithHighestProfit(ledger.players);
                   
                   return (
@@ -339,7 +351,7 @@ const SavedLedgers = ({ setCurrentPage }) => {
                             <div className="flex justify-between items-center">
                               <span className="font-medium">{topPlayer.name}</span>
                               <span className={`font-semibold ${(topPlayer.cashOut - topPlayer.buyIn) > 0 ? 'text-success' : 'text-error'}`}>
-                                ${((topPlayer.cashOut - topPlayer.buyIn) / 100).toFixed(2)}
+                                ${formatLedgerMoney((topPlayer.cashOut - topPlayer.buyIn), ledger)}
                               </span>
                             </div>
                           </div>
@@ -402,7 +414,7 @@ const SavedLedgers = ({ setCurrentPage }) => {
               <div className="card-body">
                 <h3 className="text-sm opacity-70 font-medium">Total Money Exchanged</h3>
                 <p className="text-3xl font-bold">
-                  ${selectedLedger.transactions.reduce((total, tx) => total + parseFloat(tx.amount), 0).toFixed(2)}
+                  ${formatLedgerMoney(selectedLedger.transactions.reduce((total, tx) => total + parseFloat(tx.amount), 0), selectedLedger)}
                 </p>
               </div>
             </div>
@@ -431,10 +443,10 @@ const SavedLedgers = ({ setCurrentPage }) => {
                       return (
                         <div key={index} className="grid grid-cols-12 p-4 hover:bg-base-200/50 transition-colors">
                           <div className="col-span-4 font-medium">{player.name}</div>
-                          <div className="col-span-2 text-right">${(player.buyIn / 100).toFixed(2)}</div>
-                          <div className="col-span-2 text-right">${(player.cashOut / 100).toFixed(2)}</div>
+                          <div className="col-span-2 text-right">${formatLedgerMoney(player.buyIn, selectedLedger)}</div>
+                          <div className="col-span-2 text-right">${formatLedgerMoney(player.cashOut, selectedLedger)}</div>
                           <div className={`col-span-4 text-right font-semibold ${profit > 0 ? 'text-success' : profit < 0 ? 'text-error' : ''}`}>
-                            ${(profit / 100).toFixed(2)}
+                            ${formatLedgerMoney(profit, selectedLedger)}
                           </div>
                         </div>
                       );
@@ -466,7 +478,7 @@ const SavedLedgers = ({ setCurrentPage }) => {
                       <div key={index} className="grid grid-cols-9 p-4 hover:bg-base-200/50 transition-colors">
                         <div className="col-span-3 font-medium">{tx.from}</div>
                         <div className="col-span-3 font-medium">{tx.to}</div>
-                        <div className="col-span-3 text-right text-success font-semibold">${parseFloat(tx.amount).toFixed(2)}</div>
+                        <div className="col-span-3 text-right text-success font-semibold">${formatLedgerMoney(parseFloat(tx.amount), selectedLedger)}</div>
                       </div>
                     ))}
                   </div>

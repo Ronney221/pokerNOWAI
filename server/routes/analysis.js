@@ -192,7 +192,7 @@ router.get('/logs/:userId', async (req, res) => {
 // Save ledger data
 router.post('/save-ledger', async (req, res) => {
   try {
-    const { firebaseUid, sessionName, players, transactions, originalFileName } = req.body;
+    const { firebaseUid, sessionName, players, transactions, originalFileName, denomination } = req.body;
     
     if (!firebaseUid || !transactions || !transactions.length) {
       return res.status(400).json({ 
@@ -225,7 +225,8 @@ router.post('/save-ledger', async (req, res) => {
       sessionDate: new Date(),
       players: players || [],
       transactions: processedTransactions,
-      originalFileName
+      originalFileName,
+      denomination: denomination || 'cents' // Add denomination with cents as default
     });
 
     await ledger.save();
