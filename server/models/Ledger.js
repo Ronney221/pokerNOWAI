@@ -64,6 +64,19 @@ const LedgerSchema = new Schema({
     type: String,
     trim: true
   },
+  denomination: {
+    type: String,
+    enum: ['cents', 'dollars'],
+    default: 'cents'
+  },
+  isShared: {
+    type: Boolean,
+    default: false
+  },
+  shareCode: {
+    type: String,
+    sparse: true
+  },
   createdAt: {
     type: Date,
     default: Date.now

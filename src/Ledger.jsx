@@ -1,4 +1,4 @@
-// src/analytics.jsx
+// src/ledger.jsx
 import React, { useState, useRef } from 'react';
 import './index.css';
 import Papa from 'papaparse';
@@ -17,6 +17,7 @@ const Ledger = ({ setCurrentPage }) => {
     const [saving, setSaving] = useState(false);
     const [ledgerSaved, setLedgerSaved] = useState(false);
     const [sessionName, setSessionName] = useState('Poker Session');
+    const [denomination, setDenomination] = useState('cents'); // 'cents' or 'dollars'
     const [originalFileName, setOriginalFileName] = useState('');
     const [isDragging, setIsDragging] = useState(false);
     const fileInputRef = useRef(null);
@@ -42,6 +43,14 @@ const Ledger = ({ setCurrentPage }) => {
         summary[name].combined = summary[name].buyOut + summary[name].stack;
       });
       return summary;
+    };
+  
+    // Helper: Get divisor based on denomination
+    const getDivisor = () => denomination === 'cents' ? 100 : 1;
+  
+    // Format money amount based on current denomination
+    const formatMoney = (amount) => {
+      return (amount / getDivisor()).toFixed(2);
     };
   
     // Fuzzy grouping function using string-similarity
@@ -133,6 +142,11 @@ const Ledger = ({ setCurrentPage }) => {
     const handleFileUpload = (e) => {
       const file = e.target.files[0];
       processFile(file);
+    };
+    
+    // Handle denomination change
+    const handleDenominationChange = (e) => {
+      setDenomination(e.target.value);
     };
     
     // Handle drag events
@@ -230,9 +244,10 @@ const Ledger = ({ setCurrentPage }) => {
   
       // Calculate each player's net balance (in dollars)
       const netBalances = [];
+      const divisor = getDivisor();
       Object.keys(playerMap).forEach((name) => {
         const { totalBuyIn, totalBuyOutStack } = playerMap[name];
-        const net = (totalBuyOutStack - totalBuyIn) / 100;
+        const net = (totalBuyOutStack - totalBuyIn) / divisor;
         netBalances.push({ name, net });
       });
   
@@ -324,7 +339,8 @@ const Ledger = ({ setCurrentPage }) => {
           sessionName: sessionName,
           players: players,
           transactions: transactions,
-          originalFileName: originalFileName
+          originalFileName: originalFileName,
+          denomination: denomination // Save the denomination setting
         });
         
         toast.success("Ledger saved successfully!");
@@ -358,6 +374,44 @@ const Ledger = ({ setCurrentPage }) => {
           <div className="max-w-5xl mx-auto">
             <div className="card bg-base-100 shadow-xl overflow-hidden">
               <div className="p-8">
+                {/* Denomination Selection */}
+                <div className="mb-8">
+                  <div className="form-control">
+                    <label className="label">
+                      <span className="label-text font-medium">Game Denomination</span>
+                    </label>
+                    <div className="flex gap-4">
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="denomination"
+                          value="cents"
+                          checked={denomination === 'cents'}
+                          onChange={handleDenominationChange}
+                          className="radio radio-primary"
+                        />
+                        <span>Cents (divide by 100 to display in dollars)</span>
+                      </label>
+                      <label className="flex items-center gap-2 cursor-pointer">
+                        <input
+                          type="radio"
+                          name="denomination"
+                          value="dollars"
+                          checked={denomination === 'dollars'}
+                          onChange={handleDenominationChange}
+                          className="radio radio-primary"
+                        />
+                        <span>Dollars (no conversion needed)</span>
+                      </label>
+                    </div>
+                    <label className="label">
+                      <span className="label-text-alt text-base-content/60">
+                        Select whether your game is played with cents (e.g., 100 cents = $1) or dollars
+                      </span>
+                    </label>
+                  </div>
+                </div>
+
                 {/* Step 1: Upload CSV */}
                 <div className={`space-y-6 ${aliasGroups.length > 0 ? 'opacity-50 pointer-events-none' : ''}`}>
                   <div className="flex items-center">
@@ -459,11 +513,11 @@ const Ledger = ({ setCurrentPage }) => {
                               <div className="mb-3 text-sm grid grid-cols-2 gap-2">
                                 <div>
                                   <span className="text-xs opacity-70">Buy-in</span>
-                                  <div className="font-medium">${(groupObj.totals.buyIn / 100).toFixed(2)}</div>
+                                  <div className="font-medium">${formatMoney(groupObj.totals.buyIn)}</div>
                                 </div>
                                 <div>
                                   <span className="text-xs opacity-70">Cash-out</span>
-                                  <div className="font-medium">${(groupObj.totals.combined / 100).toFixed(2)}</div>
+                                  <div className="font-medium">${formatMoney(groupObj.totals.combined)}</div>
                                 </div>
                               </div>
                               
@@ -528,8 +582,8 @@ const Ledger = ({ setCurrentPage }) => {
                                       ))}
                                     </div>
                                   </td>
-                                  <td className="text-right">${(totals.buyIn / 100).toFixed(2)}</td>
-                                  <td className="text-right">${(totals.combined / 100).toFixed(2)}</td>
+                                  <td className="text-right">${formatMoney(totals.buyIn)}</td>
+                                  <td className="text-right">${formatMoney(totals.combined)}</td>
                                 </tr>
                               ))}
                             </tbody>
