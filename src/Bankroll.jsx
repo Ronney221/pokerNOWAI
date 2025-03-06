@@ -20,6 +20,8 @@ import {
   Legend,
   Filler
 } from 'chart.js';
+import { motion, AnimatePresence } from 'framer-motion';
+import { pageTransitionVariants, containerVariants, itemVariants } from './animations/pageTransitions';
 
 // Register Chart.js components
 ChartJS.register(
@@ -803,9 +805,15 @@ const Bankroll = () => {
    */
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-[200px]">
+      <motion.div
+        initial="initial"
+        animate="animate"
+        exit="exit"
+        variants={pageTransitionVariants}
+        className="min-h-screen bg-gradient-to-b from-base-100 via-base-100/50 to-base-200/30 flex justify-center items-center"
+      >
         <div className="loader">Loading...</div>
-      </div>
+      </motion.div>
     );
   }
 
@@ -814,10 +822,18 @@ const Bankroll = () => {
    */
   if (!currentUser) {
     return (
-      <div className="text-center p-8">
-        <h2 className="text-2xl font-bold mb-4">Performance Tracking</h2>
-        <p className="mb-4">Please sign in to view your performance history.</p>
-      </div>
+      <motion.div
+        initial="initial"
+        animate="animate"
+        exit="exit"
+        variants={pageTransitionVariants}
+        className="min-h-screen bg-gradient-to-b from-base-100 via-base-100/50 to-base-200/30 flex items-center justify-center"
+      >
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">Performance Tracking</h2>
+          <p className="mb-4">Please sign in to view your performance history.</p>
+        </div>
+      </motion.div>
     );
   }
 
@@ -826,499 +842,537 @@ const Bankroll = () => {
    */
   if (error) {
     return (
-      <div className="text-center p-8">
-        <h2 className="text-2xl font-bold mb-4">Performance Tracking</h2>
-        <p className="text-red-500 mb-4">{error}</p>
-        <button 
-          className="btn btn-primary" 
-          onClick={fetchPerformanceData}
-        >
-          Try Again
-        </button>
-      </div>
+      <motion.div
+        initial="initial"
+        animate="animate"
+        exit="exit"
+        variants={pageTransitionVariants}
+        className="min-h-screen bg-gradient-to-b from-base-100 via-base-100/50 to-base-200/30 flex items-center justify-center"
+      >
+        <div className="text-center">
+          <h2 className="text-2xl font-bold mb-4">Performance Tracking</h2>
+          <p className="text-red-500 mb-4">{error}</p>
+          <button 
+            className="btn btn-primary" 
+            onClick={fetchPerformanceData}
+          >
+            Try Again
+          </button>
+        </div>
+      </motion.div>
     );
   }
 
   return (
-    <div className="container mx-auto p-4 pt-64">
-      <div className="flex justify-between items-center mb-6">
-        <h2 className="text-2xl font-bold">Your Poker Performance</h2>
-        <div className="flex gap-2">
-          <button 
-            className="btn btn-primary"
-            onClick={handleOpenAddModal}
-          >
-            Add Session
-          </button>
-          {performanceData.length > 0 && (
-            <button 
-              className={`btn ${isGlobalEditMode ? 'btn-secondary' : 'btn-accent'}`}
-              onClick={() => {
-                // Toggle edit mode
-                setIsGlobalEditMode(!isGlobalEditMode);
-                // If leaving edit mode, clear any active editing
-                if (isGlobalEditMode) {
-                  setEditingRow(null);
-                  setEditFormData({});
-                }
-              }}
-            >
-              {isGlobalEditMode ? 'Save Changes' : 'Edit Sessions'}
-            </button>
-          )}
-        </div>
+    <motion.div
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      variants={pageTransitionVariants}
+      className="min-h-screen bg-gradient-to-b from-base-100 via-base-100/50 to-base-200/30"
+    >
+      {/* Background Elements - Make them more subtle and stable */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden">
+        <div className="absolute top-40 right-10 w-96 h-96 bg-primary/5 rounded-full blur-3xl opacity-50"></div>
+        <div className="absolute bottom-20 left-10 w-72 h-72 bg-secondary/5 rounded-full blur-3xl opacity-50"></div>
+        <div className="absolute top-1/2 left-1/3 w-64 h-64 bg-accent/5 rounded-full blur-3xl opacity-50"></div>
       </div>
-      
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <div className="card bg-base-200 shadow-xl">
-          <div className="card-body">
-            <h3 className="card-title">Total Buy-in</h3>
-            <p className="text-3xl font-bold">${formatMoney(calculateTotalBuyIn())}</p>
-          </div>
-        </div>
-        
-        <div className="card bg-base-200 shadow-xl">
-          <div className="card-body">
-            <h3 className="card-title">Total Cash-out</h3>
-            <p className="text-3xl font-bold">${formatMoney(calculateTotalCashOut())}</p>
-          </div>
-        </div>
-        
-        <div className="card bg-base-200 shadow-xl">
-          <div className="card-body">
-            <h3 className="card-title">Total Profit/Loss</h3>
-            <p className={`text-3xl font-bold ${calculateTotalProfit() >= 0 ? 'text-success' : 'text-error'}`}>
-              ${formatMoney(calculateTotalProfit())}
-            </p>
-          </div>
-        </div>
-      </div>
-      
-      {/* No Performance Data Yet */}
-      {performanceData.length === 0 && (
-        <div className="text-center p-8 mb-8 bg-base-200 rounded-lg">
-          <h3 className="text-xl font-bold mb-4">No Performance Data Yet</h3>
-          <p className="mb-4">Track your performance from the Saved Ledgers page or add a new session manually.</p>
-          <button 
-            className="btn btn-primary"
-            onClick={handleOpenAddModal}
-          >
-            Add Your First Session
-          </button>
-        </div>
-      )}
-      
-      {/* Performance Table */}
-      {performanceData.length > 0 && (
-        <div className="card bg-base-100 shadow-xl mb-8">
-          <div className="card-body">
-            <h3 className="card-title mb-4">Session History</h3>
-            {/* Edit Mode Instruction */}
-            {isGlobalEditMode && !editingRow && (
-              <div className="alert alert-info mb-4">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                <span>Select a session to edit by clicking on its row.</span>
-              </div>
-            )}
-            <div className="overflow-x-auto">
-              <table className="table w-full">
-                <thead>
-                  <tr>
-                    {isGlobalEditMode && (
-                      <th>
-                        <label>
-                          <input
-                            type="checkbox"
-                            className="checkbox"
-                            checked={selectedSessions.length === performanceData.length}
-                            onChange={(e) => {
-                              if (e.target.checked) {
-                                // Select all
-                                setSelectedSessions(performanceData.map(item => item._id));
-                              } else {
-                                // Deselect all
-                                setSelectedSessions([]);
-                              }
-                            }}
-                          />
-                        </label>
-                      </th>
-                    )}
-                    <th>Date</th>
-                    <th>Session</th>
-                    <th>Player</th>
-                    <th>Buy-in</th>
-                    <th>Cash-out</th>
-                    <th>Profit/Loss</th>
-                    {/* Only show actions column when in edit mode */}
-                    {isGlobalEditMode && <th>Actions</th>}
-                  </tr>
-                </thead>
-                <tbody>
-                  {editingRow ? (
-                    // Editing row UI
-                    <tr>
-                      {isGlobalEditMode && <td></td>}
-                      <td>
-                        <input
-                          type="date"
-                          name="sessionDate"
-                          value={editFormData.sessionDate}
-                          onChange={handleEditInputChange}
-                          className="input input-bordered w-full"
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="text"
-                          name="sessionName"
-                          value={editFormData.sessionName}
-                          onChange={handleEditInputChange}
-                          placeholder="Session name"
-                          className="input input-bordered w-full"
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="text"
-                          name="playerName"
-                          value={editFormData.playerName}
-                          onChange={handleEditInputChange}
-                          className="input input-bordered w-full"
-                          placeholder="Player name"
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          name="buyIn"
-                          value={editFormData.buyIn}
-                          onChange={handleEditInputChange}
-                          className="input input-bordered w-full"
-                          step="0.01"
-                          min="0"
-                        />
-                      </td>
-                      <td>
-                        <input
-                          type="number"
-                          name="cashOut"
-                          value={editFormData.cashOut}
-                          onChange={handleEditInputChange}
-                          className="input input-bordered w-full"
-                          step="0.01"
-                          min="0"
-                        />
-                      </td>
-                      <td className={`${editFormData.cashOut - editFormData.buyIn >= 0 ? 'text-success' : 'text-error'}`}>
-                        ${editFormData.cashOut - editFormData.buyIn >= 0 ? (editFormData.cashOut - editFormData.buyIn).toFixed(2) : ((editFormData.cashOut - editFormData.buyIn) * -1).toFixed(2)}
-                      </td>
-                      <td>
-                        <div className="flex gap-2">
-                          <button 
-                            className="btn btn-primary btn-xs"
-                            onClick={() => handleSaveEdit(editingRow)}
-                          >
-                            Save
-                          </button>
-                          <button 
-                            className="btn btn-ghost btn-xs"
-                            onClick={handleCancelEdit}
-                          >
-                            Cancel
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
-                  ) : null}
-                  
-                  {/* Performance data rows */}
-                  {performanceData.map(session => (
-                    <tr key={session._id} className={editingRow === session._id ? 'bg-base-200' : ''}>
-                      {isGlobalEditMode && (
-                        <td>
-                          <label>
-                            <input
-                              type="checkbox"
-                              className="checkbox"
-                              checked={selectedSessions.includes(session._id)}
-                              onChange={() => handleSessionSelect(session._id)}
-                            />
-                          </label>
-                        </td>
-                      )}
-                      <td>{formatDate(session.sessionDate)}</td>
-                      <td>{session.sessionName || 'Unnamed Game'}</td>
-                      <td>{session.playerName}</td>
-                      <td>${formatMoney(session.buyIn)}</td>
-                      <td>${formatMoney(session.cashOut)}</td>
-                      <td className={session.profit >= 0 ? 'text-success' : 'text-error'}>
-                        ${formatMoney(session.profit)}
-                      </td>
-                      {/* Only show action buttons when in edit mode and actively editing a row */}
-                      {isGlobalEditMode && !editingRow && (
-                        <td>
-                          <button
-                            className="btn btn-xs btn-primary"
-                            onClick={() => handleEditClick(session)}
-                          >
-                            Edit
-                          </button>
-                        </td>
-                      )}
-                    </tr>
-                  ))}
-                  {/* Totals row */}
-                  <tr className="font-bold">
-                    {isGlobalEditMode && <td></td>}
-                    <td colSpan={3}>Totals</td>
-                    <td>${formatMoney(calculateTotalBuyIn())}</td>
-                    <td>${formatMoney(calculateTotalCashOut())}</td>
-                    <td className={calculateTotalProfit() >= 0 ? 'text-success' : 'text-error'}>
-                      ${formatMoney(calculateTotalProfit())}
-                    </td>
-                    {isGlobalEditMode && <td></td>}
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            
-            {/* Delete selected sessions button */}
-            {isGlobalEditMode && selectedSessions.length > 0 && (
-              <div className="mt-4 flex justify-end">
-                <button 
-                  className="btn btn-error" 
-                  onClick={handleOpenMultiDeleteModal}
-                >
-                  Delete Selected ({selectedSessions.length})
-                </button>
-              </div>
-            )}
-            
-            {/* Edit Mode Controls */}
-            {isGlobalEditMode && !editingRow && (
-              <div className="flex justify-end mt-4">
-                <button 
-                  className="btn btn-secondary"
-                  onClick={() => setIsGlobalEditMode(false)}
-                >
-                  Save
-                </button>
-              </div>
-            )}
-            
-            {/* Edit Row Controls */}
-            {editingRow && (
-              <div className="flex justify-end mt-4 gap-2">
-                <button 
-                  className="btn btn-ghost"
-                  onClick={handleCancelEdit}
-                >
-                  Cancel
-                </button>
-                <button 
-                  className="btn btn-primary"
-                  onClick={() => handleSaveEdit(editingRow)}
-                  disabled={loading}
-                >
-                  {loading ? <span className="loading loading-spinner"></span> : 'Save'}
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
-      
-      {/* Performance chart and stats - moved to the bottom of the page */}
-      {!loading && displayChart()}
-      
-      {/* Add Session Modal */}
-      {isAddModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
-          <div className="bg-base-100 p-6 rounded-lg w-11/12 max-w-md">
-            <h3 className="text-lg font-bold mb-4">Add New Session</h3>
-            
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">Session Name</span>
-              </label>
-              <input
-                type="text"
-                name="sessionName"
-                value={newSessionData.sessionName}
-                onChange={handleNewSessionInputChange}
-                placeholder="Enter session name"
-                className="input input-bordered w-full"
-              />
-            </div>
-            
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">Player Name</span>
-              </label>
-              <input
-                type="text"
-                name="playerName"
-                value={newSessionData.playerName}
-                onChange={handleNewSessionInputChange}
-                placeholder="Enter player name"
-                className="input input-bordered w-full"
-              />
-            </div>
-            
-            <div className="form-control">
-              <label className="label">
-                <span className="label-text">Session Date</span>
-              </label>
-              <input
-                type="date"
-                name="sessionDate"
-                value={newSessionData.sessionDate}
-                onChange={handleNewSessionInputChange}
-                className="input input-bordered w-full"
-              />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-4 mt-4">
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">
-                    Buy-in Amount (in dollars)
-                  </span>
-                </label>
-                <div className="input-group">
-                  <span>$</span>
-                  <input
-                    type="number"
-                    name="buyIn"
-                    value={newSessionData.buyIn}
-                    onChange={handleNewSessionInputChange}
-                    placeholder="0"
-                    className="input input-bordered w-full"
-                    step="1"
-                    min="0"
-                  />
-                </div>
-              </div>
-              
-              <div className="form-control">
-                <label className="label">
-                  <span className="label-text">
-                    Cash-out Amount (in dollars)
-                  </span>
-                </label>
-                <div className="input-group">
-                  <span>$</span>
-                  <input
-                    type="number"
-                    name="cashOut"
-                    value={newSessionData.cashOut}
-                    onChange={handleNewSessionInputChange}
-                    placeholder="0"
-                    className="input input-bordered w-full"
-                    step="1"
-                    min="0"
-                  />
-                </div>
-              </div>
-            </div>
-            
-            {/* Profit/Loss Preview */}
-            {(newSessionData.buyIn !== '' && newSessionData.cashOut !== '') && (
-              <div className="mt-4 p-3 bg-base-200 rounded-lg">
-                <div className="font-semibold">Profit/Loss Preview:</div>
-                <div className={`text-lg font-bold ${parseFloat(newSessionData.cashOut || 0) - parseFloat(newSessionData.buyIn || 0) >= 0 ? 'text-success' : 'text-error'}`}>
-                  ${(parseFloat(newSessionData.cashOut || 0) - parseFloat(newSessionData.buyIn || 0)).toFixed(2)}
-                </div>
-              </div>
-            )}
-            
-            <div className="modal-action mt-6">
-              <button 
-                className="btn" 
-                onClick={() => setIsAddModalOpen(false)}
-              >
-                Cancel
-              </button>
-              <button 
-                className="btn btn-primary" 
-                onClick={handleAddSession}
-                disabled={loading || !newSessionData.playerName || newSessionData.buyIn === '' || newSessionData.cashOut === ''}
-              >
-                {loading ? <span className="loading loading-spinner"></span> : 'Add Session'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-      
-      {/* Delete Confirmation Modal */}
-      {isDeleteModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
-          <div className="bg-base-100 p-6 rounded-lg w-11/12 max-w-md">
-            <h3 className="text-lg font-bold mb-4">Confirm Deletion</h3>
-            <p>Are you sure you want to delete this session?</p>
-            {performanceToDelete && (
-              <p className="my-4 p-3 bg-base-200 rounded-lg">
-                <span className="font-semibold">{performanceToDelete.sessionName || 'Unnamed Game'}</span> 
-                <br />
-                <span className="text-sm opacity-80">{formatDate(performanceToDelete.sessionDate)}</span>
-                <br />
-                <span className="font-semibold">Profit/Loss:</span> <span className={performanceToDelete.profit >= 0 ? 'text-success' : 'text-error'}>
-                  ${formatMoney(performanceToDelete.profit)}
-                </span>
-              </p>
-            )}
-            <div className="flex justify-end gap-2 mt-2">
-              <button 
-                className="btn btn-ghost" 
-                onClick={() => {
-                  setIsDeleteModalOpen(false);
-                  setPerformanceToDelete(null);
-                }}
-              >
-                Cancel
-              </button>
-              <button 
-                className="btn btn-error" 
-                onClick={handleConfirmDelete}
-                disabled={loading}
-              >
-                {loading ? <span className="loading loading-spinner"></span> : 'Delete'}
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
-      {/* Multi-Delete Confirmation Modal */}
-      {isMultiDeleteModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
-          <div className="bg-base-100 p-6 rounded-lg w-11/12 max-w-md">
-            <h3 className="text-lg font-bold mb-4">Confirm Multiple Deletion</h3>
-            <p>Are you sure you want to delete {selectedSessions.length} selected sessions?</p>
-            <p className="mt-2 text-warning">This action cannot be undone.</p>
-            
-            <div className="flex justify-end gap-2 mt-6">
+      <div className="container mx-auto px-4 pt-32 pb-20 relative z-10">
+        <motion.div
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+        >
+          <div className="flex justify-between items-center mb-6">
+            <motion.h2 
+              variants={itemVariants}
+              className="text-2xl font-bold"
+            >
+              Your Poker Performance
+            </motion.h2>
+            <motion.div 
+              variants={itemVariants}
+              className="flex gap-2"
+            >
               <button 
-                className="btn btn-ghost" 
-                onClick={() => setIsMultiDeleteModalOpen(false)}
+                className="btn btn-primary"
+                onClick={handleOpenAddModal}
               >
-                Cancel
+                Add Session
               </button>
+              {performanceData.length > 0 && (
+                <button 
+                  className={`btn ${isGlobalEditMode ? 'btn-secondary' : 'btn-accent'}`}
+                  onClick={() => {
+                    setIsGlobalEditMode(!isGlobalEditMode);
+                    if (isGlobalEditMode) {
+                      setEditingRow(null);
+                      setEditFormData({});
+                    }
+                  }}
+                >
+                  {isGlobalEditMode ? 'Save Changes' : 'Edit Sessions'}
+                </button>
+              )}
+            </motion.div>
+          </div>
+          
+          {/* Summary Cards */}
+          <motion.div 
+            variants={containerVariants}
+            className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
+          >
+            <motion.div variants={itemVariants} className="card bg-base-200 shadow-xl">
+              <div className="card-body">
+                <h3 className="card-title">Total Buy-in</h3>
+                <p className="text-3xl font-bold">${formatMoney(calculateTotalBuyIn())}</p>
+              </div>
+            </motion.div>
+            
+            <motion.div variants={itemVariants} className="card bg-base-200 shadow-xl">
+              <div className="card-body">
+                <h3 className="card-title">Total Cash-out</h3>
+                <p className="text-3xl font-bold">${formatMoney(calculateTotalCashOut())}</p>
+              </div>
+            </motion.div>
+            
+            <motion.div variants={itemVariants} className="card bg-base-200 shadow-xl">
+              <div className="card-body">
+                <h3 className="card-title">Total Profit/Loss</h3>
+                <p className={`text-3xl font-bold ${calculateTotalProfit() >= 0 ? 'text-success' : 'text-error'}`}>
+                  ${formatMoney(calculateTotalProfit())}
+                </p>
+              </div>
+            </motion.div>
+          </motion.div>
+          
+          {/* No Performance Data Yet */}
+          {performanceData.length === 0 && (
+            <div className="text-center p-8 mb-8 bg-base-200 rounded-lg">
+              <h3 className="text-xl font-bold mb-4">No Performance Data Yet</h3>
+              <p className="mb-4">Track your performance from the Saved Ledgers page or add a new session manually.</p>
               <button 
-                className="btn btn-error" 
-                onClick={handleConfirmMultiDelete}
-                disabled={loading}
+                className="btn btn-primary"
+                onClick={handleOpenAddModal}
               >
-                {loading ? <span className="loading loading-spinner"></span> : `Delete ${selectedSessions.length} Sessions`}
+                Add Your First Session
               </button>
             </div>
-          </div>
-        </div>
-      )}
-    </div>
+          )}
+          
+          {/* Performance Table */}
+          {performanceData.length > 0 && (
+            <div className="card bg-base-100 shadow-xl mb-8">
+              <div className="card-body">
+                <h3 className="card-title mb-4">Session History</h3>
+                {/* Edit Mode Instruction */}
+                {isGlobalEditMode && !editingRow && (
+                  <div className="alert alert-info mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                    <span>Select a session to edit by clicking on its row.</span>
+                  </div>
+                )}
+                <div className="overflow-x-auto">
+                  <table className="table w-full">
+                    <thead>
+                      <tr>
+                        {isGlobalEditMode && (
+                          <th>
+                            <label>
+                              <input
+                                type="checkbox"
+                                className="checkbox"
+                                checked={selectedSessions.length === performanceData.length}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    // Select all
+                                    setSelectedSessions(performanceData.map(item => item._id));
+                                  } else {
+                                    // Deselect all
+                                    setSelectedSessions([]);
+                                  }
+                                }}
+                              />
+                            </label>
+                          </th>
+                        )}
+                        <th>Date</th>
+                        <th>Session</th>
+                        <th>Player</th>
+                        <th>Buy-in</th>
+                        <th>Cash-out</th>
+                        <th>Profit/Loss</th>
+                        {/* Only show actions column when in edit mode */}
+                        {isGlobalEditMode && <th>Actions</th>}
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {editingRow ? (
+                        // Editing row UI
+                        <tr>
+                          {isGlobalEditMode && <td></td>}
+                          <td>
+                            <input
+                              type="date"
+                              name="sessionDate"
+                              value={editFormData.sessionDate}
+                              onChange={handleEditInputChange}
+                              className="input input-bordered w-full"
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="text"
+                              name="sessionName"
+                              value={editFormData.sessionName}
+                              onChange={handleEditInputChange}
+                              placeholder="Session name"
+                              className="input input-bordered w-full"
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="text"
+                              name="playerName"
+                              value={editFormData.playerName}
+                              onChange={handleEditInputChange}
+                              className="input input-bordered w-full"
+                              placeholder="Player name"
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="number"
+                              name="buyIn"
+                              value={editFormData.buyIn}
+                              onChange={handleEditInputChange}
+                              className="input input-bordered w-full"
+                              step="0.01"
+                              min="0"
+                            />
+                          </td>
+                          <td>
+                            <input
+                              type="number"
+                              name="cashOut"
+                              value={editFormData.cashOut}
+                              onChange={handleEditInputChange}
+                              className="input input-bordered w-full"
+                              step="0.01"
+                              min="0"
+                            />
+                          </td>
+                          <td className={`${editFormData.cashOut - editFormData.buyIn >= 0 ? 'text-success' : 'text-error'}`}>
+                            ${editFormData.cashOut - editFormData.buyIn >= 0 ? (editFormData.cashOut - editFormData.buyIn).toFixed(2) : ((editFormData.cashOut - editFormData.buyIn) * -1).toFixed(2)}
+                          </td>
+                          <td>
+                            <div className="flex gap-2">
+                              <button 
+                                className="btn btn-primary btn-xs"
+                                onClick={() => handleSaveEdit(editingRow)}
+                              >
+                                Save
+                              </button>
+                              <button 
+                                className="btn btn-ghost btn-xs"
+                                onClick={handleCancelEdit}
+                              >
+                                Cancel
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ) : null}
+                      
+                      {/* Performance data rows */}
+                      {performanceData.map(session => (
+                        <tr key={session._id} className={editingRow === session._id ? 'bg-base-200' : ''}>
+                          {isGlobalEditMode && (
+                            <td>
+                              <label>
+                                <input
+                                  type="checkbox"
+                                  className="checkbox"
+                                  checked={selectedSessions.includes(session._id)}
+                                  onChange={() => handleSessionSelect(session._id)}
+                                />
+                              </label>
+                            </td>
+                          )}
+                          <td>{formatDate(session.sessionDate)}</td>
+                          <td>{session.sessionName || 'Unnamed Game'}</td>
+                          <td>{session.playerName}</td>
+                          <td>${formatMoney(session.buyIn)}</td>
+                          <td>${formatMoney(session.cashOut)}</td>
+                          <td className={session.profit >= 0 ? 'text-success' : 'text-error'}>
+                            ${formatMoney(session.profit)}
+                          </td>
+                          {/* Only show action buttons when in edit mode and actively editing a row */}
+                          {isGlobalEditMode && !editingRow && (
+                            <td>
+                              <button
+                                className="btn btn-xs btn-primary"
+                                onClick={() => handleEditClick(session)}
+                              >
+                                Edit
+                              </button>
+                            </td>
+                          )}
+                        </tr>
+                      ))}
+                      {/* Totals row */}
+                      <tr className="font-bold">
+                        {isGlobalEditMode && <td></td>}
+                        <td colSpan={3}>Totals</td>
+                        <td>${formatMoney(calculateTotalBuyIn())}</td>
+                        <td>${formatMoney(calculateTotalCashOut())}</td>
+                        <td className={calculateTotalProfit() >= 0 ? 'text-success' : 'text-error'}>
+                          ${formatMoney(calculateTotalProfit())}
+                        </td>
+                        {isGlobalEditMode && <td></td>}
+                      </tr>
+                    </tbody>
+                  </table>
+                </div>
+                
+                {/* Delete selected sessions button */}
+                {isGlobalEditMode && selectedSessions.length > 0 && (
+                  <div className="mt-4 flex justify-end">
+                    <button 
+                      className="btn btn-error" 
+                      onClick={handleOpenMultiDeleteModal}
+                    >
+                      Delete Selected ({selectedSessions.length})
+                    </button>
+                  </div>
+                )}
+                
+                {/* Edit Mode Controls */}
+                {isGlobalEditMode && !editingRow && (
+                  <div className="flex justify-end mt-4">
+                    <button 
+                      className="btn btn-secondary"
+                      onClick={() => setIsGlobalEditMode(false)}
+                    >
+                      Save
+                    </button>
+                  </div>
+                )}
+                
+                {/* Edit Row Controls */}
+                {editingRow && (
+                  <div className="flex justify-end mt-4 gap-2">
+                    <button 
+                      className="btn btn-ghost"
+                      onClick={handleCancelEdit}
+                    >
+                      Cancel
+                    </button>
+                    <button 
+                      className="btn btn-primary"
+                      onClick={() => handleSaveEdit(editingRow)}
+                      disabled={loading}
+                    >
+                      {loading ? <span className="loading loading-spinner"></span> : 'Save'}
+                    </button>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+          
+          {/* Performance chart and stats - moved to the bottom of the page */}
+          {!loading && displayChart()}
+          
+          {/* Add Session Modal */}
+          {isAddModalOpen && (
+            <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+              <div className="bg-base-100 p-6 rounded-lg w-11/12 max-w-md">
+                <h3 className="text-lg font-bold mb-4">Add New Session</h3>
+                
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">Session Name</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="sessionName"
+                    value={newSessionData.sessionName}
+                    onChange={handleNewSessionInputChange}
+                    placeholder="Enter session name"
+                    className="input input-bordered w-full"
+                  />
+                </div>
+                
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">Player Name</span>
+                  </label>
+                  <input
+                    type="text"
+                    name="playerName"
+                    value={newSessionData.playerName}
+                    onChange={handleNewSessionInputChange}
+                    placeholder="Enter player name"
+                    className="input input-bordered w-full"
+                  />
+                </div>
+                
+                <div className="form-control">
+                  <label className="label">
+                    <span className="label-text">Session Date</span>
+                  </label>
+                  <input
+                    type="date"
+                    name="sessionDate"
+                    value={newSessionData.sessionDate}
+                    onChange={handleNewSessionInputChange}
+                    className="input input-bordered w-full"
+                  />
+                </div>
+                
+                <div className="grid grid-cols-2 gap-4 mt-4">
+                  <div className="form-control">
+                    <label className="label">
+                      <span className="label-text">
+                        Buy-in Amount (in dollars)
+                      </span>
+                    </label>
+                    <div className="input-group">
+                      <span>$</span>
+                      <input
+                        type="number"
+                        name="buyIn"
+                        value={newSessionData.buyIn}
+                        onChange={handleNewSessionInputChange}
+                        placeholder="0"
+                        className="input input-bordered w-full"
+                        step="1"
+                        min="0"
+                      />
+                    </div>
+                  </div>
+                  
+                  <div className="form-control">
+                    <label className="label">
+                      <span className="label-text">
+                        Cash-out Amount (in dollars)
+                      </span>
+                    </label>
+                    <div className="input-group">
+                      <span>$</span>
+                      <input
+                        type="number"
+                        name="cashOut"
+                        value={newSessionData.cashOut}
+                        onChange={handleNewSessionInputChange}
+                        placeholder="0"
+                        className="input input-bordered w-full"
+                        step="1"
+                        min="0"
+                      />
+                    </div>
+                  </div>
+                </div>
+                
+                {/* Profit/Loss Preview */}
+                {(newSessionData.buyIn !== '' && newSessionData.cashOut !== '') && (
+                  <div className="mt-4 p-3 bg-base-200 rounded-lg">
+                    <div className="font-semibold">Profit/Loss Preview:</div>
+                    <div className={`text-lg font-bold ${parseFloat(newSessionData.cashOut || 0) - parseFloat(newSessionData.buyIn || 0) >= 0 ? 'text-success' : 'text-error'}`}>
+                      ${(parseFloat(newSessionData.cashOut || 0) - parseFloat(newSessionData.buyIn || 0)).toFixed(2)}
+                    </div>
+                  </div>
+                )}
+                
+                <div className="modal-action mt-6">
+                  <button 
+                    className="btn" 
+                    onClick={() => setIsAddModalOpen(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    className="btn btn-primary" 
+                    onClick={handleAddSession}
+                    disabled={loading || !newSessionData.playerName || newSessionData.buyIn === '' || newSessionData.cashOut === ''}
+                  >
+                    {loading ? <span className="loading loading-spinner"></span> : 'Add Session'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+          
+          {/* Delete Confirmation Modal */}
+          {isDeleteModalOpen && (
+            <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+              <div className="bg-base-100 p-6 rounded-lg w-11/12 max-w-md">
+                <h3 className="text-lg font-bold mb-4">Confirm Deletion</h3>
+                <p>Are you sure you want to delete this session?</p>
+                {performanceToDelete && (
+                  <p className="my-4 p-3 bg-base-200 rounded-lg">
+                    <span className="font-semibold">{performanceToDelete.sessionName || 'Unnamed Game'}</span> 
+                    <br />
+                    <span className="text-sm opacity-80">{formatDate(performanceToDelete.sessionDate)}</span>
+                    <br />
+                    <span className="font-semibold">Profit/Loss:</span> <span className={performanceToDelete.profit >= 0 ? 'text-success' : 'text-error'}>
+                      ${formatMoney(performanceToDelete.profit)}
+                    </span>
+                  </p>
+                )}
+                <div className="flex justify-end gap-2 mt-2">
+                  <button 
+                    className="btn btn-ghost" 
+                    onClick={() => {
+                      setIsDeleteModalOpen(false);
+                      setPerformanceToDelete(null);
+                    }}
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    className="btn btn-error" 
+                    onClick={handleConfirmDelete}
+                    disabled={loading}
+                  >
+                    {loading ? <span className="loading loading-spinner"></span> : 'Delete'}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Multi-Delete Confirmation Modal */}
+          {isMultiDeleteModalOpen && (
+            <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
+              <div className="bg-base-100 p-6 rounded-lg w-11/12 max-w-md">
+                <h3 className="text-lg font-bold mb-4">Confirm Multiple Deletion</h3>
+                <p>Are you sure you want to delete {selectedSessions.length} selected sessions?</p>
+                <p className="mt-2 text-warning">This action cannot be undone.</p>
+                
+                <div className="flex justify-end gap-2 mt-6">
+                  <button 
+                    className="btn btn-ghost" 
+                    onClick={() => setIsMultiDeleteModalOpen(false)}
+                  >
+                    Cancel
+                  </button>
+                  <button 
+                    className="btn btn-error" 
+                    onClick={handleConfirmMultiDelete}
+                    disabled={loading}
+                  >
+                    {loading ? <span className="loading loading-spinner"></span> : `Delete ${selectedSessions.length} Sessions`}
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </motion.div>
+      </div>
+    </motion.div>
   );
 };
 

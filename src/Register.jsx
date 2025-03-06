@@ -52,12 +52,14 @@ const Register = ({ setCurrentPage }) => {
     const hasMinLength = password.length >= 6;
     const hasUppercase = /[A-Z]/.test(password);
     const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+    const hasNumber = /\d/.test(password);
     
-    if (!hasMinLength || !hasUppercase || !hasSpecialChar) {
+    if (!hasMinLength || !hasUppercase || !hasSpecialChar || !hasNumber) {
       setPasswordError({
         hasMinLength,
         hasUppercase,
-        hasSpecialChar
+        hasSpecialChar,
+        hasNumber
       });
       return false;
     }
@@ -316,6 +318,9 @@ const Register = ({ setCurrentPage }) => {
                     </li>
                     <li className={`flex items-center gap-1 ${passwordError?.hasUppercase === false ? 'text-error/80' : passwordError?.hasUppercase === true ? 'text-success/80' : ''}`}>
                       <span className="inline-block w-1 h-1 rounded-full bg-current"></span> One uppercase letter
+                    </li>
+                    <li className={`flex items-center gap-1 ${passwordError?.hasNumber === false ? 'text-error/80' : passwordError?.hasNumber === true ? 'text-success/80' : ''}`}>
+                      <span className="inline-block w-1 h-1 rounded-full bg-current"></span> One number
                     </li>
                     <li className={`flex items-center gap-1 ${passwordError?.hasSpecialChar === false ? 'text-error/80' : passwordError?.hasSpecialChar === true ? 'text-success/80' : ''}`}>
                       <span className="inline-block w-1 h-1 rounded-full bg-current"></span> One special character

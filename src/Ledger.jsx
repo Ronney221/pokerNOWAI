@@ -6,6 +6,8 @@ import stringSimilarity from 'string-similarity';
 import { toast } from 'react-toastify';
 import { useAuth } from './contexts/AuthContext';
 import { saveLedgerData } from './services/ledger';
+import { motion, AnimatePresence } from 'framer-motion';
+import { pageTransitionVariants, containerVariants, itemVariants } from './animations/pageTransitions';
 
 const Ledger = ({ setCurrentPage }) => {
     const [parsedData, setParsedData] = useState([]);
@@ -225,71 +227,87 @@ const Ledger = ({ setCurrentPage }) => {
       setGroupingConfirmed(false);
     };
   
-    // Settlement calculation function (using updated parsedData)
+    // Simple settlement algorithm to minimize transactions:
+    function settleDebts(netBalances) {
+      const creditors = [];
+      const debtors = [];
+      const isDollarsGame = denomination === 'dollars';
+
+      netBalances.forEach((player) => {
+        // For cents games, convert to dollars for display
+        const adjustedNet = isDollarsGame ? player.net : player.net / 100;
+        if (adjustedNet > 0) {
+          creditors.push({ ...player, net: adjustedNet });
+        } else if (adjustedNet < 0) {
+          debtors.push({ ...player, net: adjustedNet });
+        }
+      });
+
+      // Sort creditors (largest net first) and debtors (most negative first)
+      creditors.sort((a, b) => b.net - a.net);
+      debtors.sort((a, b) => a.net - b.net);
+      
+      const transactions = [];
+      let i = 0;
+      let j = 0;
+      
+      while (i < debtors.length && j < creditors.length) {
+        const debtor = debtors[i];
+        const creditor = creditors[j];
+        const amount = Math.min(creditor.net, -debtor.net);
+        
+        // Round to 2 decimal places for display
+        const roundedAmount = Math.round(amount * 100) / 100;
+        
+        transactions.push({
+          from: debtor.name,
+          to: creditor.name,
+          amount: roundedAmount.toFixed(2)
+        });
+        
+        debtor.net += amount;
+        creditor.net -= amount;
+        
+        if (Math.abs(debtor.net) < 0.01) i++;
+        if (Math.abs(creditor.net) < 0.01) j++;
+      }
+      
+      return transactions;
+    }
+  
+    // Calculate settlement calculation function (using updated parsedData)
     const calculateSettlement = () => {
       // Group data by player_nickname
       const playerMap = {};
+      const isDollarsGame = denomination === 'dollars';
+      
       parsedData.forEach((row) => {
         const name = row.player_nickname;
         const buyIn = parseFloat(row.buy_in) || 0;
         const buyOut = parseFloat(row.buy_out) || 0;
         const stack = parseFloat(row.stack) || 0;
-  
+
         if (!playerMap[name]) {
           playerMap[name] = { totalBuyIn: 0, totalBuyOutStack: 0 };
         }
         playerMap[name].totalBuyIn += buyIn;
         playerMap[name].totalBuyOutStack += (buyOut + stack);
       });
-  
-      // Calculate each player's net balance (in dollars)
+
+      // Calculate each player's net balance
       const netBalances = [];
-      const divisor = getDivisor();
       Object.keys(playerMap).forEach((name) => {
         const { totalBuyIn, totalBuyOutStack } = playerMap[name];
-        const net = (totalBuyOutStack - totalBuyIn) / divisor;
+        // Keep original values for settlement calculation
+        const net = totalBuyOutStack - totalBuyIn;
         netBalances.push({ name, net });
       });
-  
+
       // Compute settlement transactions
       const settlements = settleDebts(netBalances);
       setTransactions(settlements);
       toast.success("Settlements calculated successfully!");
     };
-  
-    // Simple settlement algorithm to minimize transactions:
-    function settleDebts(netBalances) {
-      const creditors = [];
-      const debtors = [];
-      netBalances.forEach((player) => {
-        if (player.net > 0) {
-          creditors.push({ ...player });
-        } else if (player.net < 0) {
-          debtors.push({ ...player });
-        }
-      });
-      // Sort creditors (largest net first) and debtors (most negative first)
-      creditors.sort((a, b) => b.net - a.net);
-      debtors.sort((a, b) => a.net - b.net);
-      const transactions = [];
-      let i = 0;
-      let j = 0;
-      while (i < debtors.length && j < creditors.length) {
-        const debtor = debtors[i];
-        const creditor = creditors[j];
-        const amount = Math.min(creditor.net, -debtor.net);
-        transactions.push({
-          from: debtor.name,
-          to: creditor.name,
-          amount: amount.toFixed(2),
-        });
-        debtor.net += amount;
-        creditor.net -= amount;
-        if (Math.abs(debtor.net) < 0.01) i++;
-        if (Math.abs(creditor.net) < 0.01) j++;
-      }
-      return transactions;
-    }
   
     // Aggregate confirmed groupings by player name so that duplicates are combined
     const aggregatedGroups = () => {
@@ -359,19 +377,39 @@ const Ledger = ({ setCurrentPage }) => {
     };
   
     return (
-      <div className="min-h-screen bg-gradient-to-b from-base-100 to-base-200/50 pt-32 pb-20">
+      <motion.div
+        initial="initial"
+        animate="animate"
+        exit="exit"
+        variants={pageTransitionVariants}
+        className="min-h-screen bg-gradient-to-b from-base-100 to-base-200/50 pt-32 pb-20"
+      >
         <div className="container mx-auto px-4">
           {/* Hero Header */}
-          <div className="text-center mb-12">
-            <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+          <motion.div 
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+            className="text-center mb-12"
+          >
+            <motion.h1 
+              variants={itemVariants}
+              className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"
+            >
               Ledger Calculator
-            </h1>
-            <p className="text-lg opacity-80 max-w-2xl mx-auto">
+            </motion.h1>
+            <motion.p 
+              variants={itemVariants}
+              className="text-lg opacity-80 max-w-2xl mx-auto"
+            >
               Process your poker session data, match player names, and calculate optimal settlements quickly and easily.
-            </p>
-          </div>
+            </motion.p>
+          </motion.div>
 
-          <div className="max-w-5xl mx-auto">
+          <motion.div 
+            variants={containerVariants}
+            className="max-w-5xl mx-auto"
+          >
             <div className="card bg-base-100 shadow-xl overflow-hidden">
               <div className="p-8">
                 {/* Step 1: Denomination Selection */}
@@ -740,9 +778,9 @@ const Ledger = ({ setCurrentPage }) => {
                 )}
               </div>
             </div>
-          </div>
+          </motion.div>
         </div>
-      </div>
+      </motion.div>
     );
 };
 

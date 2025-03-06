@@ -3,6 +3,7 @@ import React, { useState, useCallback, useRef } from 'react';
 import { toast } from 'react-toastify';
 import { useAuth } from './contexts/AuthContext';
 import { motion, AnimatePresence } from 'framer-motion';
+import { pageTransitionVariants, containerVariants, itemVariants } from './animations/pageTransitions';
 import './index.css';
 
 function FullLogUpload() {
@@ -147,19 +148,39 @@ function FullLogUpload() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-base-100 to-base-200/50 pt-32 pb-20">
+    <motion.div
+      initial="initial"
+      animate="animate"
+      exit="exit"
+      variants={pageTransitionVariants}
+      className="min-h-screen bg-gradient-to-b from-base-100 to-base-200/50 pt-32 pb-20"
+    >
       <div className="container mx-auto px-4">
         {/* Hero Header */}
-        <div className="text-center mb-12">
-          <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+        <motion.div 
+          variants={containerVariants}
+          initial="hidden"
+          animate="visible"
+          className="text-center mb-12"
+        >
+          <motion.h1 
+            variants={itemVariants}
+            className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent"
+          >
             Upload Poker Log
-          </h1>
-          <p className="text-lg opacity-80 max-w-2xl mx-auto">
+          </motion.h1>
+          <motion.p 
+            variants={itemVariants}
+            className="text-lg opacity-80 max-w-2xl mx-auto"
+          >
             Upload your PokerNow CSV log file to analyze your game, track statistics, and improve your poker strategy.
-          </p>
-        </div>
+          </motion.p>
+        </motion.div>
 
-        <div className="max-w-5xl mx-auto">
+        <motion.div 
+          variants={containerVariants}
+          className="max-w-5xl mx-auto"
+        >
           <div className="card bg-base-100 shadow-xl overflow-hidden">
             <div className="p-8">
               {!currentUser ? (
@@ -334,9 +355,9 @@ function FullLogUpload() {
               )}
             </div>
           </div>
-        </div>
+        </motion.div>
       </div>
-    </div>
+    </motion.div>
   );
 }
 

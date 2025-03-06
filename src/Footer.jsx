@@ -99,10 +99,12 @@ const Footer = () => {
                 </div>
                 <div>
                   <p className="font-bold text-base">Ronney Do</p>
-                  <p className="text-xs opacity-70">Full Stack Developer</p>
+                  <p className="text-xs opacity-70">Software Engineer</p>
                   <div className="flex items-center gap-1 mt-1">
                     <div className="badge badge-xs badge-primary"></div>
+                    <a href="https://docs.google.com/document/d/1LrOxb1h5nHf0gbXTiCUulH64IVjJRTscKFopmrgyouE/edit?usp=sharing">
                     <span className="text-xs">Available for hire</span>
+                    </a>
                   </div>
                 </div>
               </div>
@@ -120,7 +122,7 @@ const Footer = () => {
                   </svg>
                 </a>
                 
-                <a href="https://www.linkedin.com/in/ronney221" 
+                <a href="https://www.linkedin.com/in/ronneydo" 
                   className="btn btn-circle btn-sm btn-ghost hover:bg-primary/10 transition-transform hover:scale-110" 
                   target="_blank" 
                   rel="noopener noreferrer"
