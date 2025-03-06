@@ -199,7 +199,7 @@ const Home = ({ setCurrentPage }) => {
             className="absolute bottom-1/4 left-1/4 w-96 h-96 bg-secondary/20 rounded-full blur-3xl"
           />
         </div>
-
+        
         <div className="container mx-auto px-4 relative z-10">
           <div className="max-w-4xl mx-auto text-center">
             <motion.div
@@ -232,14 +232,14 @@ const Home = ({ setCurrentPage }) => {
               variants={itemVariants}
               className="flex flex-col sm:flex-row gap-4 justify-center"
             >
-              <button
+              <button 
                 onClick={() => handlePageChange(currentUser ? 'fullLogUpload' : 'register')}
                 className="btn btn-primary btn-lg group relative overflow-hidden"
               >
                 <span className="relative z-10">Get Started Free</span>
                 <div className="absolute inset-0 bg-gradient-to-r from-primary to-secondary opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
               </button>
-              <button
+              <button 
                 onClick={() => handlePageChange('ledger')}
                 className="btn btn-outline btn-lg group"
               >

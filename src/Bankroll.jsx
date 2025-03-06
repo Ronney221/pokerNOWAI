@@ -228,20 +228,20 @@ const Bankroll = () => {
       const data = await getPlayerPerformanceHistory(currentUser.uid);
       
       // Sort by date (most recent first), and then by createdAt (most recent first)
-      // This ensures that entries with the same date will show the newest entries first
       const sortedData = data.sort((a, b) => {
+        // First compare dates
         const dateA = new Date(a.sessionDate).setHours(0, 0, 0, 0);
         const dateB = new Date(b.sessionDate).setHours(0, 0, 0, 0);
         
-        // If dates are different, sort by date
         if (dateB !== dateA) {
           return dateB - dateA;
         }
         
-        // If dates are the same, sort by createdAt time (most recent first)
-        const createdAtA = new Date(a.createdAt).getTime();
-        const createdAtB = new Date(b.createdAt).getTime();
-        return createdAtB - createdAtA;
+        // If dates are the same, sort by createdAt (most recent first)
+        // Use timestamps for comparison, defaulting to 0 if createdAt doesn't exist
+        const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
+        const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
+        return timeB - timeA;
       });
       
       setPerformanceData(sortedData);
@@ -255,16 +255,50 @@ const Bankroll = () => {
   };
 
   /**
+   * Format date string to readable format
+   */
+  const formatDate = (dateString) => {
+    // Create a date object and keep it in local timezone
+    const date = new Date(dateString);
+    return format(date, 'MMM d, yyyy');
+  };
+
+  /**
+   * Format date for input fields
+   */
+  const formatDateForInput = (dateString) => {
+    // Create a date object and keep it in local timezone
+    const date = new Date(dateString);
+    return format(date, 'yyyy-MM-dd');
+  };
+
+  /**
+   * Format date for storage
+   */
+  const formatDateForStorage = (dateString) => {
+    // Create a date object in local timezone
+    const [year, month, day] = dateString.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
+    // Set the time to noon to avoid any timezone issues
+    date.setHours(12, 0, 0, 0);
+    return date.toISOString();
+  };
+
+  /**
    * Initialize new session data with default values
    */
-  const getDefaultNewSessionData = () => ({
-    sessionName: '',
-    playerName: '',
-    sessionDate: format(new Date(), 'yyyy-MM-dd'),
-    buyIn: '',
-    cashOut: '',
-    denomination: 'dollars' // Default and only option is dollars now
-  });
+  const getDefaultNewSessionData = () => {
+    const today = new Date();
+    today.setHours(12, 0, 0, 0); // Set to noon to avoid timezone issues
+    return {
+      sessionName: '',
+      playerName: '',
+      sessionDate: format(today, 'yyyy-MM-dd'),
+      buyIn: '',
+      cashOut: '',
+      denomination: 'dollars'
+    };
+  };
 
   /**
    * Format money value for display (always in whole dollars)
@@ -282,45 +316,6 @@ const Bankroll = () => {
     // Convert dollars (float/string) to cents (integer) for storage
     // Round to whole dollars (no cents)
     return Math.round(parseFloat(dollars)) * 100;
-  };
-
-  /**
-   * Format date string to readable format
-   */
-  const formatDate = (dateString) => {
-    try {
-      if (!dateString) return 'N/A';
-      if (isValid(new Date(dateString))) {
-        return format(new Date(dateString), 'MMM d, yyyy');
-      }
-      return dateString;
-    } catch (error) {
-      return dateString || 'N/A';
-    }
-  };
-
-  /**
-   * Format date string for input fields (YYYY-MM-DD)
-   * Handles timezone issues by using UTC
-   */
-  const formatDateForInput = (dateString) => {
-    // Parse the date string and format it as YYYY-MM-DD without timezone adjustment
-    const date = new Date(dateString);
-    const year = date.getUTCFullYear();
-    const month = String(date.getUTCMonth() + 1).padStart(2, '0');
-    const day = String(date.getUTCDate()).padStart(2, '0');
-    return `${year}-${month}-${day}`;
-  };
-
-  /**
-   * Format date for storage as ISO string
-   * Uses UTC to ensure consistent date representation
-   */
-  const formatDateForStorage = (dateString) => {
-    // Create a UTC date from the input date string
-    const [year, month, day] = dateString.split('-').map(Number);
-    const date = new Date(Date.UTC(year, month - 1, day));
-    return date.toISOString();
   };
 
   /**
@@ -606,7 +601,8 @@ const Bankroll = () => {
         cashOut,
         profit,
         isManualEntry: true,
-        denomination: 'dollars'
+        denomination: 'dollars',
+        createdAt: new Date().toISOString() // Add creation timestamp
       };
       
       // Call API to add session
