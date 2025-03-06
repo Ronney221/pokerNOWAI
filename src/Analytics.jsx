@@ -443,50 +443,32 @@ const Analytics = () => {
     );
   };
 
-  const AnalysisCard = ({ title, description, icon, type, isPremium }) => {
-    // Get the color class based on the type
-    const getColorClass = () => {
-      switch (type) {
-        case 'ranges':
-          return 'text-emerald-500 hover:text-emerald-600';
-        case 'metrics':
-          return 'text-blue-500 hover:text-blue-600';
-        case 'hands':
-          return 'text-purple-500 hover:text-purple-600';
-        case 'charts':
-          return 'text-amber-500 hover:text-amber-600';
-        default:
-          return 'text-primary hover:text-primary/80';
-      }
-    };
-
-    return (
-      <motion.div
-        whileHover={{ y: -5 }}
-        whileTap={{ scale: 0.98 }}
-        className={`card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300 border border-base-200 backdrop-blur-sm ${isPremium ? 'bg-emerald-500' : ''}`}
-      >
-        <div className="card-body p-8">
-          <div className="mb-6 bg-primary/10 p-4 rounded-xl w-fit">
-            {icon}
-          </div>
-          <h3 className="text-2xl font-bold mb-3">{title}</h3>
-          <p className="opacity-80 mb-4">{description}</p>
-          <div className="mt-auto">
-            <button 
-              onClick={() => setSelectedView(type)}
-              className={`btn btn-ghost btn-sm px-0 hover:bg-transparent ${getColorClass()}`}
-            >
-              Analyze
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
-              </svg>
-            </button>
-          </div>
+  const AnalysisCard = ({ title, description, icon, type, isPremium }) => (
+    <motion.div
+      whileHover={{ y: -5 }}
+      whileTap={{ scale: 0.98 }}
+      className={`card bg-base-100 shadow-xl hover:shadow-2xl transition-all duration-300 border border-base-200 backdrop-blur-sm ${isPremium ? 'bg-emerald-500' : ''}`}
+    >
+      <div className="card-body p-8">
+        <div className="mb-6 bg-primary/10 p-4 rounded-xl w-fit">
+          {icon}
         </div>
-      </motion.div>
-    );
-  };
+        <h3 className="text-2xl font-bold mb-3">{title}</h3>
+        <p className="opacity-80 mb-4">{description}</p>
+        <div className="mt-auto">
+          <button 
+            onClick={() => setSelectedView(type)}
+            className="btn btn-ghost text-primary btn-sm px-0 hover:bg-transparent hover:text-primary/80"
+          >
+            Analyze
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14 5l7 7m0 0l-7 7m7-7H3" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </motion.div>
+  );
 
   if (!currentUser) {
     return (
@@ -542,27 +524,47 @@ const Analytics = () => {
       <div className="absolute top-40 right-10 w-96 h-96 bg-primary/5 rounded-full blur-3xl"></div>
       <div className="absolute bottom-20 left-10 w-72 h-72 bg-secondary/5 rounded-full blur-3xl"></div>
       <div className="absolute top-1/2 left-1/3 w-64 h-64 bg-accent/5 rounded-full blur-3xl"></div>
-
+    
       <div className="container mx-auto px-4 relative z-10">
         <div className="text-center mb-12">
           <h1 className="text-4xl font-bold mb-6 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
             Poker Analysis Dashboard
           </h1>
           
-          {/* Analysis Selection */}
-          <div className="flex gap-4 overflow-x-auto pb-4 justify-center mb-8">
-            {analysisData?.analysis.map((analysis, index) => (
-              <button
-                key={analysis.analysisId}
-                className={`btn btn-lg ${selectedAnalysis?.analysisId === analysis.analysisId ? 'btn-primary' : 'btn-ghost'}`}
-                onClick={() => setSelectedAnalysis(analysis)}
-              >
-                Analysis {index + 1} - {formatDate(analysis.timestamp)}
-              </button>
-            ))}
+          {/* Analysis Selection Dropdown */}
+          <div className="max-w-md mx-auto mb-8">
+            <div className="dropdown w-full">
+              <label tabIndex={0} className="btn btn-lg w-full">
+                {selectedAnalysis ? 
+                  `Analysis from ${formatDate(selectedAnalysis.timestamp)}` : 
+                  'Select Analysis'}
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                </svg>
+              </label>
+              <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow-lg bg-base-200 rounded-box w-full max-h-96 overflow-y-auto">
+                {analysisData?.analysis
+                  .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)) // Sort newest first
+                  .map((analysis, index) => (
+                    <li key={analysis.analysisId}>
+                      <button 
+                        className={`py-3 px-4 hover:bg-base-300 rounded-lg ${
+                          selectedAnalysis?.analysisId === analysis.analysisId ? 'bg-primary/10' : ''
+                        }`}
+                        onClick={() => setSelectedAnalysis(analysis)}
+                      >
+                        <div className="flex flex-col items-start">
+                          <span className="font-medium">Game {analysisData.analysis.length - index}</span>
+                          <span className="text-sm opacity-70">{formatDate(analysis.timestamp)}</span>
+                        </div>
+                      </button>
+                    </li>
+                  ))}
+              </ul>
+            </div>
           </div>
         </div>
-
+        
         <AnimatePresence mode="wait">
           {selectedAnalysis && !selectedView && (
             <motion.div
@@ -590,7 +592,7 @@ const Analytics = () => {
                 icon={
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                  </svg>
+                          </svg>
                 }
                 isPremium={false}
               />
@@ -643,10 +645,10 @@ const Analytics = () => {
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                  </button>
+                              </svg>
+                            </button>
                 </div>
-
+                
                 {selectedView === 'ranges' && (
                   <>
                     <div className="mb-8">
@@ -664,7 +666,7 @@ const Analytics = () => {
                         ))}
                       </div>
                     </div>
-
+                    
                     {selectedPlayerTab && (
                       <AnimatePresence mode="wait">
                         <motion.div
@@ -698,13 +700,8 @@ const Analytics = () => {
                                         <div className="stat-title text-lg opacity-80">VPIP</div>
                                         <div className="stat-value text-4xl">{metric["VPIP %"]}%</div>
                                         <div className="stat-desc text-lg">{metric["VPIP"]} voluntary hands</div>
-                                      </div>
-                                      <div className="stat flex-1 bg-base-200/50 rounded-xl p-6 text-center">
-                                        <div className="stat-title text-lg opacity-80">3Bet</div>
-                                        <div className="stat-value text-4xl">{metric["Threebet %"]}%</div>
-                                        <div className="stat-desc text-lg">{metric["Threebet"]} threebet hands</div>
-                                      </div>
-                                    </div>
+                          </div>
+                        </div>
                                   ))}
                               </div>
                             </div>
@@ -724,14 +721,14 @@ const Analytics = () => {
                               {selectedAnalysis?.files.players && 
                                 selectedAnalysis.files.players[`${selectedPlayerTab}.json`]
                                   ?.filter(player => player)
-                                  .slice(0, 10)
+                                  .slice(0, 8)
                                   .map((player, index) => (
                                     <PlayerCard key={index} player={player} />
                                   ))}
                               
                               {/* Premium Lock Overlay for Additional Cards */}
                               {selectedAnalysis?.files.players && 
-                                selectedAnalysis.files.players[`${selectedPlayerTab}.json`]?.length > 10 && (
+                                selectedAnalysis.files.players[`${selectedPlayerTab}.json`]?.length > 8 && (
                                 <div className="col-span-full">
                                   <div className="card bg-base-100/90 shadow-xl backdrop-blur-sm border border-base-200 p-8 text-center">
                                     <div className="text-warning mb-4">
@@ -741,13 +738,13 @@ const Analytics = () => {
                                     </div>
                                     <h3 className="text-xl font-bold mb-2">Premium Feature</h3>
                                     <p className="text-base-content/70 mb-4">
-                                      Upgrade to view {selectedAnalysis.files.players[`${selectedPlayerTab}.json`].length - 8} more cards and unlock advanced analysis features.
+                                      Upgrade to view <strong className="text-lg">{selectedAnalysis.files.players[`${selectedPlayerTab}.json`].length - 8}</strong> more cards and unlock advanced analysis features.
                                     </p>
                                     <button className="btn btn-primary">
                                       Upgrade to Premium
                                     </button>
                                   </div>
-                                </div>
+                              </div>
                               )}
                             </div>
                           </div>
@@ -760,9 +757,9 @@ const Analytics = () => {
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                                 </svg>
-                              </div>
+                        </div>
                               <p className="text-lg opacity-70">No range data available for this player</p>
-                            </div>
+                      </div>
                           )}
                         </motion.div>
                       </AnimatePresence>
@@ -810,13 +807,13 @@ const Analytics = () => {
                           <div className="text-warning mb-4">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-                            </svg>
-                          </div>
+                    </svg>
+                  </div>
                           <p className="text-lg text-base-content/70">
                             No notable hands were found in your PokerNow CSV log. This could happen if no significant hands were played or if the log file was incomplete.
                           </p>
-                        </div>
-                      </div>
+                </div>
+              </div>
                     )}
                   </div>
                 )}
@@ -845,11 +842,11 @@ const Analytics = () => {
                             onClick={() => setSelectedChartTab('full_shows_chart')}
                           >
                             Full Shows
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-
+                  </button>
+                </div>
+              </div>
+            </div>
+            
                     <AnimatePresence mode="wait">
                       <motion.div
                         key={selectedChartTab}
@@ -873,17 +870,17 @@ const Analytics = () => {
                         <div className="text-warning mb-4">
                           <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                          </svg>
-                        </div>
+                    </svg>
+                  </div>
                         <h2 className="text-3xl font-bold mb-4">Premium Feature</h2>
                         <p className="text-lg text-base-content/70 mb-6">
                           Chart Analysis is a premium feature that provides deep insights into betting patterns and player tendencies.
                         </p>
                         <button className="btn btn-primary btn-lg">
                           Upgrade to Premium
-                        </button>
-                      </div>
-                    </div>
+                  </button>
+                </div>
+              </div>
                   </>
                 )}
               </div>
