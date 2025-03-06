@@ -54,8 +54,8 @@ const Analytics = () => {
       setError(null);
       
       try {
-        console.log('Fetching analysis data...');
-        console.log('API URL:', `${apiBase}/api/analysis/${currentUser.uid}`);
+        //console.log('Fetching analysis data...');
+        //console.log('API URL:', `${apiBase}/api/analysis/${currentUser.uid}`);
         
         const response = await fetch(
           `${apiBase}/api/analysis/${currentUser.uid}`,
@@ -69,14 +69,14 @@ const Analytics = () => {
           }
         );
         
-        console.log('Response status:', response.status);
+        //console.log('Response status:', response.status);
         
         const data = await response.json().catch(e => {
           console.error('Error parsing JSON:', e);
           return null;
         });
         
-        console.log('API Response:', data);
+        //('API Response:', data);
         
         if (!response.ok) {
           throw new Error(
@@ -101,7 +101,7 @@ const Analytics = () => {
         );
         const mostRecentAnalysis = sortedAnalyses[0];
         
-        console.log('Most recent analysis:', mostRecentAnalysis);
+        //console.log('Most recent analysis:', mostRecentAnalysis);
         
         // Validate the analysis data structure
         if (!mostRecentAnalysis.files || 
@@ -141,7 +141,7 @@ const Analytics = () => {
   // Add API health check
   const checkApiHealth = async () => {
     try {
-      console.log('Checking API health at:', `${apiBase}/health`);
+      //console.log('Checking API health at:', `${apiBase}/health`);
       const response = await fetch(`${apiBase}/health`, {
         credentials: 'same-origin',
         headers: {
@@ -154,7 +154,7 @@ const Analytics = () => {
       }
       
       const data = await response.json();
-      console.log('Health check response:', data);
+      //console.log('Health check response:', data);
       
       if (data.status !== 'healthy') {
         console.warn('API health check failed:', data);
@@ -174,9 +174,9 @@ const Analytics = () => {
   // Debug logging for selected data
   useEffect(() => {
     if (selectedAnalysis) {
-      console.log('Selected analysis files:', selectedAnalysis.files);
-      console.log('Selected player tab:', selectedPlayerTab);
-      console.log('Selected chart tab:', selectedChartTab);
+      //console.log('Selected analysis files:', selectedAnalysis.files);
+      //console.log('Selected player tab:', selectedPlayerTab);
+      //console.log('Selected chart tab:', selectedChartTab);
     }
   }, [selectedAnalysis, selectedPlayerTab, selectedChartTab]);
 
@@ -426,7 +426,21 @@ const Analytics = () => {
                         }
                       </td>
                       <td className="px-6 py-4">{boardColored}</td>
-                      <td className="px-6 py-4">{hand.Opponent || <span className="opacity-25">Not Shown</span>}</td>
+                      <td className="px-6 py-4">
+                        {hand.Opponent ? 
+                          hand.Opponent.split('').map((char, i) => {
+                            const isCard = i % 2 === 0;
+                            const suit = isCard ? hand.Opponent[i + 1] : null;
+                            const isRedSuit = char === '♥' || char === '♦' || suit === '♥' || suit === '♦';
+                            return (
+                              <span key={i} className={isRedSuit ? 'text-red-500' : ''}>
+                                {char}
+                              </span>
+                            );
+                          })
+                          : <span className="opacity-25">Not Shown</span>
+                        }
+                      </td>
                       <td className="px-6 py-4">${parseFloat(hand.Invested).toFixed(2)}</td>
                       <td className="px-6 py-4">${parseFloat(hand.Collected).toFixed(2)}</td>
                       <td className={`px-6 py-4 font-medium ${net >= 0 ? 'text-success' : 'text-error'}`}>
@@ -509,8 +523,8 @@ const Analytics = () => {
             </div>
             <h2 className="text-2xl font-bold mb-4">Error Loading Analysis</h2>
             <p className="opacity-70 mb-6">{error}</p>
-            <button className="btn btn-primary" onClick={() => window.location.reload()}>
-              Try Again
+            <button className="btn btn-primary" onClick={() => window.location.href = '/fullLogUpload'}>
+              Upload Hand History
             </button>
           </div>
         </div>
