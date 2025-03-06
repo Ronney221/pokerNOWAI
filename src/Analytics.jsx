@@ -47,6 +47,23 @@ const Analytics = () => {
     );
   };
 
+  // Reusable card coloring function
+  const renderColoredCards = (cards) => {
+    if (!cards) return <span className="opacity-25">Not Shown</span>;
+    
+    return cards.replace(/['\[\]]/g, '').split(',').map((card, i, arr) => {
+      const trimmedCard = card.trim();
+      const suit = trimmedCard.slice(-1);
+      const isRedSuit = ['♥', '♦'].includes(suit);
+      
+      return (
+        <span key={i} className={isRedSuit ? 'text-red-500' : ''}>
+          {trimmedCard}{i < arr.length - 1 ? ' ' : ''}
+        </span>
+      );
+    });
+  };
+
   // Fetch analysis data when component mounts
   useEffect(() => {
     const fetchAnalysis = async () => {
@@ -228,11 +245,9 @@ const Analytics = () => {
               </span>
             </div>
             <div className="text-center py-2 px-4 bg-base-200/50 rounded-xl backdrop-blur-sm">
-              <p className={`text-3xl font-medium tracking-tight ${
-                player["Show Details"].includes('♥') || player["Show Details"].includes('♦') 
-                  ? 'text-red-500' 
-                  : ''
-              }`}>{player["Show Details"]}</p>
+              <p className="text-3xl font-medium tracking-tight">
+                {renderColoredCards(player["Show Details"])}
+              </p>
             </div>
           </div>
         </div>
@@ -282,13 +297,8 @@ const Analytics = () => {
               </span>
             </div>
             <div className="text-center py-2 px-4 bg-base-200/50 rounded-xl backdrop-blur-sm">
-              <p className={`text-3xl font-medium tracking-tight ${
-                typeof showDetails === 'string' && 
-                (showDetails.includes('♥') || showDetails.includes('♦'))
-                  ? 'text-red-500'
-                  : ''
-              }`}>
-                {showDetails}
+              <p className="text-3xl font-medium tracking-tight">
+                {renderColoredCards(showDetails)}
               </p>
             </div>
           </div>
@@ -395,51 +405,20 @@ const Analytics = () => {
                                hand.Turn && hand.Turn !== "[]" ? hand.Turn :
                                hand.Flop && hand.Flop !== "[]" ? hand.Flop : "Taken Down Preflop";
                                
-                  const boardColored = board === "Taken Down Preflop" ? <span className="opacity-25">{board}</span> :
-                    board.replace(/['\[\]]/g, '').split(',').map((card, i, arr) => {
-                      const trimmedCard = card.trim();
-                      const suit = trimmedCard.slice(-1);
-                      return (
-                        <span key={i} className={suit === '♥' || suit === '♦' ? 'text-red-500' : ''}>
-                          {trimmedCard}{i < arr.length - 1 ? ' ' : ''}
-                        </span>
-                      );
-                    });
+                  const boardColored = board === "Taken Down Preflop" ? 
+                    <span className="opacity-25">{board}</span> : 
+                    renderColoredCards(board);
                                
                   return (
                     <tr key={index} className="hover:bg-base-200/30 transition-colors">
                       <td className="px-6 py-4">{hand["Hand Number"]}</td>
                       <td className="px-6 py-4 font-medium">{playerName}</td>
                       <td className="px-6 py-4 font-medium">
-                        {hand["My Cards"] ? 
-                          hand["My Cards"].split('').map((char, i) => {
-                            const isCard = i % 2 === 0;
-                            const suit = isCard ? hand["My Cards"][i + 1] : null;
-                            const isRedSuit = char === '♥' || char === '♦' || suit === '♥' || suit === '♦';
-                            return (
-                              <span key={i} className={isRedSuit ? 'text-red-500' : ''}>
-                                {char}
-                              </span>
-                            );
-                          })
-                          : <span className="opacity-25">Not Shown</span>
-                        }
+                        {renderColoredCards(hand["My Cards"])}
                       </td>
                       <td className="px-6 py-4">{boardColored}</td>
                       <td className="px-6 py-4">
-                        {hand.Opponent ? 
-                          hand.Opponent.split('').map((char, i) => {
-                            const isCard = i % 2 === 0;
-                            const suit = isCard ? hand.Opponent[i + 1] : null;
-                            const isRedSuit = char === '♥' || char === '♦' || suit === '♥' || suit === '♦';
-                            return (
-                              <span key={i} className={isRedSuit ? 'text-red-500' : ''}>
-                                {char}
-                              </span>
-                            );
-                          })
-                          : <span className="opacity-25">Not Shown</span>
-                        }
+                        {renderColoredCards(hand.Opponent)}
                       </td>
                       <td className="px-6 py-4">${parseFloat(hand.Invested).toFixed(2)}</td>
                       <td className="px-6 py-4">${parseFloat(hand.Collected).toFixed(2)}</td>
@@ -735,7 +714,7 @@ const Analytics = () => {
                               {selectedAnalysis?.files.players && 
                                 selectedAnalysis.files.players[`${selectedPlayerTab}.json`]
                                   ?.filter(player => player)
-                                  .slice(0, 8)
+                                  //.slice(0, 8)
                                   .map((player, index) => (
                                     <PlayerCard key={index} player={player} />
                                   ))}
@@ -752,7 +731,7 @@ const Analytics = () => {
                                     </div>
                                     <h3 className="text-xl font-bold mb-2">Premium Feature</h3>
                                     <p className="text-base-content/70 mb-4">
-                                      Upgrade to view <strong className="text-lg">{selectedAnalysis.files.players[`${selectedPlayerTab}.json`].length - 8}</strong> more cards and unlock advanced analysis features.
+                                      {/* Upgrade to view <strong className="text-lg">{selectedAnalysis.files.players[`${selectedPlayerTab}.json`].length - 8}</strong> more cards and unlock advanced analysis features. */}
                                     </p>
                                     <button className="btn btn-primary">
                                       Upgrade to Premium
