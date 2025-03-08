@@ -720,7 +720,7 @@ const Analytics = () => {
                                   ))}
                               
                               {/* Premium Lock Overlay for Additional Cards */}
-                              {selectedAnalysis?.files.players && 
+                              {/* {selectedAnalysis?.files.players && 
                                 selectedAnalysis.files.players[`${selectedPlayerTab}.json`]?.length > 8 && (
                                 <div className="col-span-full">
                                   <div className="card bg-base-100/90 shadow-xl backdrop-blur-sm border border-base-200 p-8 text-center">
@@ -731,14 +731,14 @@ const Analytics = () => {
                                     </div>
                                     <h3 className="text-xl font-bold mb-2">Premium Feature</h3>
                                     <p className="text-base-content/70 mb-4">
-                                      {/* Upgrade to view <strong className="text-lg">{selectedAnalysis.files.players[`${selectedPlayerTab}.json`].length - 8}</strong> more cards and unlock advanced analysis features. */}
+                                       Upgrade to view <strong className="text-lg">{selectedAnalysis.files.players[`${selectedPlayerTab}.json`].length - 8}</strong> more cards and unlock advanced analysis features. 
                                     </p>
                                     <button className="btn btn-primary">
                                       Upgrade to Premium
                                     </button>
                                   </div>
                               </div>
-                              )}
+                              )} */}
                             </div>
                           </div>
 
