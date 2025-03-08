@@ -68,7 +68,7 @@ const Navbar = ({ setCurrentPage }) => {
       initial={{ y: -100 }}
       animate={{ y: 0 }}
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 backdrop-blur-md ${
-        scrolled 
+      scrolled 
           ? 'bg-base-100/90 shadow-lg py-3' 
           : 'bg-base-100/50 py-5'
       }`}
@@ -88,7 +88,14 @@ const Navbar = ({ setCurrentPage }) => {
 
           {/* Center/Right Navigation Links */}
           <nav className="hidden md:flex items-center">
-            <div className="flex items-center gap-6">
+            <div className="flex items-center gap-5">
+            <button
+                onClick={() => handlePageChange('features')}
+                className="btn btn-ghost normal-case font-medium rounded-lg hover:bg-base-200"
+              >
+                Features
+              </button>
+            <span className="w-px h-6 bg-base-content/10"></span>
               {/* Primary Actions */}
               <button
                 onClick={() => handlePageChange('fullLogUpload')}
@@ -119,18 +126,18 @@ const Navbar = ({ setCurrentPage }) => {
               >
                 Ledger History
               </button>
-              <button
+        <button 
                 onClick={() => handlePageChange('bankroll')}
                 className="btn btn-ghost normal-case font-medium rounded-lg hover:bg-base-200"
-              >
+        >
                 Bankroll
-              </button>
-            </div>
+        </button>
+      </div>
           </nav>
 
           {/* Right Section - User Controls */}
           <div className="flex items-center gap-2 sm:gap-4">
-            {/* Theme Toggle */}
+        {/* Theme Toggle */}
             <motion.button
               whileHover={{ scale: 1.1 }}
               whileTap={{ scale: 0.9 }}
@@ -144,7 +151,7 @@ const Navbar = ({ setCurrentPage }) => {
               )}
             </motion.button>
 
-            {currentUser ? (
+        {currentUser ? (
               <div className="relative">
                 <motion.button
                   whileHover={{ scale: 1.05 }}
@@ -152,15 +159,15 @@ const Navbar = ({ setCurrentPage }) => {
                   onClick={() => setIsProfileOpen(!isProfileOpen)}
                   className="btn btn-ghost rounded-full hover:bg-base-200 flex items-center gap-3 px-4"
                 >
-                  <div className="avatar placeholder">
+              <div className="avatar placeholder">
                     <div className="bg-primary text-primary-content rounded-full w-9">
                       <span className="text-lg font-medium">
-                        {currentUser.displayName ? 
-                          currentUser.displayName[0].toUpperCase() : 
-                          currentUser.email.split('@')[0][0].toUpperCase()}
-                      </span>
-                    </div>
-                  </div>
+                    {currentUser.displayName ? 
+                      currentUser.displayName[0].toUpperCase() : 
+                      currentUser.email.split('@')[0][0].toUpperCase()}
+                  </span>
+                </div>
+              </div>
                   <span className="font-medium opacity-90">
                     {currentUser.displayName || currentUser.email.split('@')[0]}
                   </span>
@@ -196,7 +203,7 @@ const Navbar = ({ setCurrentPage }) => {
                     </motion.div>
                   )}
                 </AnimatePresence>
-              </div>
+                </div>
             ) : (
               <div className="flex gap-3 items-center">
                 <motion.button 
@@ -212,13 +219,13 @@ const Navbar = ({ setCurrentPage }) => {
                   whileTap={{ scale: 0.98 }}
                   className="btn btn-primary normal-case font-medium shadow-sm hover:shadow-md transition-all duration-300 rounded-lg"
                   onClick={() => handlePageChange('register')}
-                >
-                  Sign up
+            >
+              Sign up
                 </motion.button>
-              </div>
-            )}
           </div>
-        </div>
+        )}
+      </div>
+    </div>
       </div>
     </motion.div>
   );

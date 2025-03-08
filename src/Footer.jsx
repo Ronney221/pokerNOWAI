@@ -98,13 +98,13 @@ const Footer = () => {
                   </div>
                 </div>
                 <div>
-                  <p className="font-bold text-base">Ronney Do</p>
-                  <p className="text-xs opacity-70">Software Engineer</p>
+                  <p className="font-bold text-base">Ronney D.</p>
+                  <p className="text-xs opacity-70">Software Developer</p>
                   <div className="flex items-center gap-1 mt-1">
-                    <div className="badge badge-xs badge-primary"></div>
-                    <a href="https://docs.google.com/document/d/1LrOxb1h5nHf0gbXTiCUulH64IVjJRTscKFopmrgyouE/edit?usp=sharing">
+                    {/* <div className="badge badge-xs badge-primary"></div>
+                    <a href="">
                     <span className="text-xs">Available for hire</span>
-                    </a>
+                    </a> */}
                   </div>
                 </div>
               </div>

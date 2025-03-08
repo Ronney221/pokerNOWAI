@@ -12,7 +12,9 @@ import Ledger from './Ledger';
 import SavedLedgers from './SavedLedgers';
 import SharedLedger from './SharedLedger';
 import Bankroll from './Bankroll';
+import Features from './Features';
 import Home from './Home';
+import Payment from './Payment';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
@@ -102,6 +104,12 @@ function App() {
       break;
     case "fullLogUpload":
       content = <FullLogUpload />;
+      break;
+    case "features":
+      content = <Features handlePageChange={setCurrentPage} />;
+      break;
+    case "payment":
+      content = <Payment handlePageChange={setCurrentPage} />;
       break;
     case "login":
       content = <Login setCurrentPage={setCurrentPage} />;
