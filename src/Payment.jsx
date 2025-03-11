@@ -175,12 +175,17 @@ const Payment = ({ handlePageChange }) => {
 
     try {
       setIsLoading(true);
+      
+      // Get Firebase ID token
+      const idToken = await currentUser.getIdToken();
+      
       const response = await fetch(`${API_URL}/users/start-trial`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'Origin': window.location.origin
+          'Origin': window.location.origin,
+          'Authorization': `Bearer ${idToken}`
         },
         credentials: 'include',
         body: JSON.stringify({
@@ -190,10 +195,18 @@ const Payment = ({ handlePageChange }) => {
         })
       });
 
-      const data = await response.json();
+      let data;
+      const responseText = await response.text();
+      try {
+        data = JSON.parse(responseText);
+      } catch (e) {
+        console.error('Failed to parse server response:', responseText);
+        throw new Error('Invalid server response format');
+      }
 
       if (!response.ok) {
-        throw new Error(data.error || data.message || 'Failed to start trial');
+        console.error('Server error response:', data);
+        throw new Error(data.error || data.message || 'Server error: ' + response.status);
       }
 
       // Refresh user status to get updated trial status

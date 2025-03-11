@@ -49,30 +49,46 @@ const StripeCheckout = ({ handlePageChange }) => {
           stripePublicKey: STRIPE_PUBLIC_KEY ? 'present' : 'missing'
         });
 
+        // Get Firebase ID token
+        const idToken = await currentUser.getIdToken();
+
         // Create checkout session
         const response = await fetch(`${apiBase}/create-checkout-session`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
-            'Origin': window.location.origin
+            'Origin': window.location.origin,
+            'Authorization': `Bearer ${idToken}`
           },
           credentials: 'include',
           body: JSON.stringify({
             priceId,
             userId: currentUser.uid,
-            email: currentUser.email
+            email: currentUser.email,
+            displayName: currentUser.displayName || currentUser.email.split('@')[0],
+            successUrl: `${window.location.origin}/payment?success=true`,
+            cancelUrl: `${window.location.origin}/payment?success=false`
           }),
         });
 
-        const data = await response.json();
-
-        if (!response.ok) {
-          throw new Error(data.error || 'Failed to create checkout session');
+        let data;
+        const responseText = await response.text();
+        try {
+          data = JSON.parse(responseText);
+        } catch (e) {
+          console.error('Failed to parse server response:', responseText);
+          throw new Error('Invalid server response format');
         }
 
-        if (!data.success || !data.clientSecret) {
-          throw new Error('Invalid response from server');
+        if (!response.ok) {
+          console.error('Server error response:', data);
+          throw new Error(data.error || data.message || 'Server error: ' + response.status);
+        }
+
+        if (!data.clientSecret) {
+          console.error('Missing client secret in response:', data);
+          throw new Error('Invalid response: missing client secret');
         }
 
         console.log('Checkout session created successfully');
@@ -100,11 +116,27 @@ const StripeCheckout = ({ handlePageChange }) => {
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       // Verify the session status
-      const response = await fetch(`${apiBase}/session-status?session_id=${sessionId}`);
-      const data = await response.json();
+      const response = await fetch(`${apiBase}/session-status?session_id=${sessionId}`, {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Origin': window.location.origin
+        },
+        credentials: 'include'
+      });
+
+      let data;
+      const responseText = await response.text();
+      try {
+        data = JSON.parse(responseText);
+      } catch (e) {
+        console.error('Failed to parse status response:', responseText);
+        throw new Error('Invalid status response format');
+      }
       
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to verify payment status');
+        console.error('Status check error:', data);
+        throw new Error(data.error || data.message || 'Failed to verify payment status');
       }
 
       if (data.status === 'complete') {
