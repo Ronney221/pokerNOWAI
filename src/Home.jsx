@@ -266,20 +266,20 @@ const Home = ({ setCurrentPage }) => {
             />
             <StatCard
               icon={UserGroupIcon}
-              value="500+"
+              value="100+"
               label="Active Players"
               gradient="bg-gradient-to-br from-secondary to-accent"
             />
             <StatCard
               icon={ShieldCheckIcon}
-              value="98%"
-              label="Accuracy Rate"
+              value="600K+"
+              label="CSV Lines Processed"
               gradient="bg-gradient-to-br from-accent to-primary"
             />
             <StatCard
               icon={RocketLaunchIcon}
-              value="35%"
-              label="Win Rate Increase"
+              value="2ms"
+              label="Processing Time"
               gradient="bg-gradient-to-br from-primary to-secondary"
             />
           </motion.div>
