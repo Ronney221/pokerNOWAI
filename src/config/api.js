@@ -14,15 +14,22 @@ export const PYTHON_API_URL = isProd
 
 // In production, use relative path for API to handle both domain and subdomain access
 export const APP_URL = isProd
-  ? `https://${DOMAIN}`  // Use non-www domain to match Firebase config
-  : `http://${DOMAIN}:${CLIENT_PORT}`;
+  ? 'https://www.pokernowai.com'
+  : 'http://localhost:5173';
 
 export const API_URL = isProd
   ? '/api' // Use relative path in production
-  : `http://${DOMAIN}:${API_PORT}/api`;
+  : 'http://localhost:5000/api';
 
 // Firebase redirect URLs
 export const FIREBASE_REDIRECT_URL = `${APP_URL}/verify-email`;
+
+// Debug log
+console.log('API Configuration:', {
+  environment: process.env.NODE_ENV,
+  apiUrl: API_URL,
+  appUrl: APP_URL
+});
 
 // Export configuration object
 export default {

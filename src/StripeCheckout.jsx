@@ -6,15 +6,10 @@ import {
 } from '@stripe/react-stripe-js';
 import { useAuth } from './contexts/AuthContext';
 import { toast } from 'react-toastify';
+import { API_URL, APP_URL } from './config/api';
 
 // Initialize Stripe outside component
 const STRIPE_PUBLIC_KEY = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
-const apiBase = process.env.NODE_ENV === 'production' 
-  ? 'https://www.pokernowai.com/api' // Use the same domain as frontend in production
-  : 'http://localhost:5000';
-
-console.log('Environment:', process.env.NODE_ENV);
-console.log('API Base URL:', apiBase);
 
 if (!STRIPE_PUBLIC_KEY) {
   console.error('Missing Stripe public key! Make sure VITE_STRIPE_PUBLIC_KEY is set in your .env file');
@@ -53,12 +48,11 @@ const StripeCheckout = ({ handlePageChange }) => {
         const idToken = await currentUser.getIdToken();
 
         // Create checkout session
-        const response = await fetch(`${apiBase}/create-checkout-session`, {
+        const response = await fetch(`${API_URL}/create-checkout-session`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
             'Accept': 'application/json',
-            'Origin': window.location.origin,
             'Authorization': `Bearer ${idToken}`
           },
           credentials: 'include',
@@ -67,8 +61,8 @@ const StripeCheckout = ({ handlePageChange }) => {
             userId: currentUser.uid,
             email: currentUser.email,
             displayName: currentUser.displayName || currentUser.email.split('@')[0],
-            successUrl: `${window.location.origin}/payment?success=true`,
-            cancelUrl: `${window.location.origin}/payment?success=false`
+            successUrl: `${APP_URL}/payment?success=true`,
+            cancelUrl: `${APP_URL}/payment?success=false`
           }),
         });
 
@@ -116,7 +110,7 @@ const StripeCheckout = ({ handlePageChange }) => {
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       // Verify the session status
-      const response = await fetch(`${apiBase}/session-status?session_id=${sessionId}`, {
+      const response = await fetch(`${API_URL}/session-status?session_id=${sessionId}`, {
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',

@@ -184,7 +184,6 @@ const Payment = ({ handlePageChange }) => {
         headers: {
           'Content-Type': 'application/json',
           'Accept': 'application/json',
-          'Origin': window.location.origin,
           'Authorization': `Bearer ${idToken}`
         },
         credentials: 'include',
