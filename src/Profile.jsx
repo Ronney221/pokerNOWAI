@@ -3,10 +3,12 @@ import { useAuth } from './contexts/AuthContext';
 import { toast } from 'react-toastify';
 
 const Profile = ({ setCurrentPage }) => {
-  const { currentUser, updateUserProfile } = useAuth();
+  const { currentUser, updateUserProfile, refreshUserStatus } = useAuth();
   const [loading, setLoading] = useState(false);
   const [isEditing, setIsEditing] = useState(false);
   const [newUsername, setNewUsername] = useState(currentUser?.displayName || '');
+  const [userStatus, setUserStatus] = useState(null);
+  const [trialLoading, setTrialLoading] = useState(false);
   
   // Animation effect when component mounts
   useEffect(() => {
@@ -15,7 +17,68 @@ const Profile = ({ setCurrentPage }) => {
         document.getElementById('profile-container').classList.add('opacity-100', 'translate-y-0');
       }, 100);
     }
-  }, []);
+
+    // Fetch user status
+    const fetchUserStatus = async () => {
+      try {
+        const response = await fetch(`http://localhost:5000/api/users/${currentUser.uid}/status`);
+        const data = await response.json();
+        setUserStatus(data);
+      } catch (error) {
+        console.error('Error fetching user status:', error);
+      }
+    };
+
+    if (currentUser) {
+      fetchUserStatus();
+    }
+  }, [currentUser]);
+
+  // Helper function to format date
+  const formatDate = (date) => {
+    return new Date(date).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+  };
+
+  // Helper function to get status badge
+  const getStatusBadge = () => {
+    if (!userStatus) return null;
+
+    if (userStatus.isPremium) {
+      return (
+        <span className="badge badge-primary py-3 px-4 font-medium">
+          Premium Member
+        </span>
+      );
+    } else if (userStatus.isTrialActive) {
+      const daysLeft = Math.ceil((new Date(userStatus.trialEndDate) - new Date()) / (1000 * 60 * 60 * 24));
+      return (
+        <div className="flex flex-col items-end gap-1">
+          <span className="badge badge-secondary py-3 px-4 font-medium">
+            Trial Active
+          </span>
+          <span className="text-xs text-base-content/60">
+            {daysLeft} days remaining
+          </span>
+        </div>
+      );
+    } else if (userStatus.hasUsedTrial) {
+      return (
+        <span className="badge badge-ghost py-3 px-4 font-medium">
+          Trial Expired
+        </span>
+      );
+    } else {
+      return (
+        <span className="badge badge-ghost py-3 px-4 font-medium">
+          Free User
+        </span>
+      );
+    }
+  };
 
   const handleUpdateUsername = async (e) => {
     e.preventDefault();
@@ -33,6 +96,42 @@ const Profile = ({ setCurrentPage }) => {
       toast.error(error.message || 'Failed to update username');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleStartTrial = async () => {
+    try {
+      setTrialLoading(true);
+      const response = await fetch('http://localhost:5000/api/users/start-trial', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          userId: currentUser.uid,
+          email: currentUser.email
+        })
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to start trial');
+      }
+
+      // Refresh user status
+      await refreshUserStatus();
+      const newStatus = await fetch(`http://localhost:5000/api/users/${currentUser.uid}/status`);
+      const newStatusData = await newStatus.json();
+      setUserStatus(newStatusData);
+      
+      toast.success('Free trial activated successfully!');
+      setCurrentPage('analytics');
+    } catch (error) {
+      console.error('Error starting trial:', error);
+      toast.error(error.message || 'Failed to start trial. Please try again.');
+    } finally {
+      setTrialLoading(false);
     }
   };
 
@@ -89,10 +188,64 @@ const Profile = ({ setCurrentPage }) => {
                   <p className="text-base-content/60 text-sm">{currentUser.email}</p>
                 </div>
                 <div className="mt-4 md:mt-0">
-                  <span className="badge badge-primary badge-outline py-3 px-4 font-medium">Member</span>
+                  {getStatusBadge()}
                 </div>
               </div>
             </div>
+
+            {/* Subscription Details Card */}
+            {userStatus && (
+              <div className="card bg-base-200/50 rounded-xl border border-base-300/50 mb-6">
+                <div className="card-body p-6">
+                  <h3 className="text-sm font-medium uppercase tracking-wider text-base-content/70 mb-3">
+                    Subscription Details
+                  </h3>
+                  <div className="space-y-2">
+                    {userStatus.isPremium && (
+                      <p className="text-sm">
+                        Premium member since {formatDate(userStatus.premiumSince)}
+                      </p>
+                    )}
+                    {userStatus.isTrialActive && (
+                      <>
+                        <p className="text-sm">
+                          Trial started on {formatDate(userStatus.trialStartDate)}
+                        </p>
+                        <p className="text-sm">
+                          Trial ends on {formatDate(userStatus.trialEndDate)}
+                        </p>
+                      </>
+                    )}
+                    {!userStatus.isPremium && !userStatus.isTrialActive && userStatus.hasUsedTrial && (
+                      <div className="flex flex-col gap-3">
+                        <p className="text-sm text-base-content/70">
+                          Your trial has expired. Upgrade to premium to access all features.
+                        </p>
+                        <button
+                          onClick={() => setCurrentPage('payment')}
+                          className="btn btn-primary btn-sm rounded-lg"
+                        >
+                          Upgrade to Premium
+                        </button>
+                      </div>
+                    )}
+                    {!userStatus.isPremium && !userStatus.isTrialActive && !userStatus.hasUsedTrial && (
+                      <div className="flex flex-col gap-3">
+                        <p className="text-sm text-base-content/70">
+                          Start your 14-day free trial to access premium features.
+                        </p>
+                        <button
+                          onClick={() => setCurrentPage('payment')}
+                          className="btn btn-secondary btn-sm rounded-lg"
+                        >
+                          Start Free Trial
+                        </button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </div>
+            )}
 
             {/* Profile Details */}
             <div className="space-y-6">
