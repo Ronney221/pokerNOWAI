@@ -24,7 +24,7 @@ const Footer = () => {
                 <p className="text-sm font-medium mb-2">Join our newsletter</p>
                 <div className="join">
                   <input className="input input-sm join-item input-bordered w-full max-w-xs" placeholder="Your email address"/>
-                  <button className="btn btn-sm btn-primary join-item">Subscribe</button>
+                  <button className="btn btn-sm btn-primary join-item disabled:opacity-50">Subscribe</button>
                 </div>
               </div>
             </div>
