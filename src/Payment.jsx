@@ -179,17 +179,21 @@ const Payment = ({ handlePageChange }) => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Origin': window.location.origin
         },
+        credentials: 'include',
         body: JSON.stringify({
           userId: currentUser.uid,
-          email: currentUser.email
+          email: currentUser.email,
+          displayName: currentUser.displayName || currentUser.email.split('@')[0]
         })
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to start trial');
+        throw new Error(data.error || data.message || 'Failed to start trial');
       }
 
       // Refresh user status to get updated trial status

@@ -10,7 +10,7 @@ import { toast } from 'react-toastify';
 // Initialize Stripe outside component
 const STRIPE_PUBLIC_KEY = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
 const apiBase = process.env.NODE_ENV === 'production' 
-  ? 'https://pokernowai.vercel.app' // Replace with your Vercel URL
+  ? 'https://www.pokernowai.com/api' // Use the same domain as frontend in production
   : 'http://localhost:5000';
 
 console.log('Environment:', process.env.NODE_ENV);
@@ -50,11 +50,14 @@ const StripeCheckout = ({ handlePageChange }) => {
         });
 
         // Create checkout session
-        const response = await fetch(`${apiBase}/api/create-checkout-session`, {
+        const response = await fetch(`${apiBase}/create-checkout-session`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Origin': window.location.origin
           },
+          credentials: 'include',
           body: JSON.stringify({
             priceId,
             userId: currentUser.uid,
@@ -97,7 +100,7 @@ const StripeCheckout = ({ handlePageChange }) => {
       await new Promise(resolve => setTimeout(resolve, 2000));
       
       // Verify the session status
-      const response = await fetch(`${apiBase}/api/session-status?session_id=${sessionId}`);
+      const response = await fetch(`${apiBase}/session-status?session_id=${sessionId}`);
       const data = await response.json();
       
       if (!response.ok) {
