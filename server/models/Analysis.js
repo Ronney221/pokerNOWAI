@@ -4,6 +4,7 @@ const mongoose = require('mongoose');
  * Analysis Schema
  * @typedef {Object} AnalysisSchema
  * @property {ObjectId} userId - Reference to the user who owns the analysis
+ * @property {string} name - Custom name for the analysis
  * @property {string} originalFileName - Original poker log file name
  * @property {Date} analysisDate - When the analysis was performed
  * @property {Object} results - Analysis results
@@ -15,8 +16,14 @@ const analysisSchema = new mongoose.Schema({
   userId: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
-    required: true,
-    index: true
+    required: true
+  },
+  name: {
+    type: String,
+    trim: true,
+    default: function() {
+      return `Analysis ${this.analysisDate ? new Date(this.analysisDate).toLocaleDateString() : 'New'}`;
+    }
   },
   originalFileName: {
     type: String,
@@ -24,7 +31,7 @@ const analysisSchema = new mongoose.Schema({
   },
   analysisDate: {
     type: Date,
-    default: Date.now,
+    default: Date.now
   },
   results: {
     handStats: {
@@ -77,8 +84,7 @@ const analysisSchema = new mongoose.Schema({
   status: {
     type: String,
     enum: ['processing', 'completed', 'error'],
-    default: 'processing',
-    index: true
+    default: 'processing'
   },
   errorMessage: String,
   processingTime: Number
@@ -108,9 +114,24 @@ analysisSchema.statics.findPending = function() {
   return this.find({ status: 'processing' }).sort({ analysisDate: 1 });
 };
 
-// Indexes
-analysisSchema.index({ userId: 1, analysisDate: -1 });
-analysisSchema.index({ status: 1, analysisDate: 1 });
+// Optimized indexes with documentation
+analysisSchema.index({ 
+  userId: 1, 
+  analysisDate: -1 
+}, {
+  name: 'user_analysis_date',
+  background: true,
+  description: 'Supports queries for user\'s analysis history, sorted by date'
+});
+
+analysisSchema.index({ 
+  status: 1, 
+  analysisDate: 1 
+}, {
+  name: 'analysis_status',
+  background: true,
+  description: 'Supports queries for analysis status monitoring and cleanup'
+});
 
 // Virtual for processing duration
 analysisSchema.virtual('duration').get(function() {

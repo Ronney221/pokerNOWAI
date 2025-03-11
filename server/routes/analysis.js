@@ -474,4 +474,71 @@ router.delete('/performance/:performanceId', async (req, res) => {
   }
 });
 
+// Rename analysis
+router.patch('/:analysisId/rename', async (req, res) => {
+  try {
+    const { analysisId } = req.params;
+    const { name } = req.body;
+
+    if (!name) {
+      return res.status(400).json({ 
+        success: false, 
+        error: 'Name is required' 
+      });
+    }
+
+    const analysis = await Analysis.findById(analysisId);
+    
+    if (!analysis) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Analysis not found' 
+      });
+    }
+
+    analysis.name = name;
+    await analysis.save();
+
+    res.json({ 
+      success: true, 
+      data: analysis 
+    });
+  } catch (error) {
+    console.error('Error renaming analysis:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to rename analysis' 
+    });
+  }
+});
+
+// Delete analysis
+router.delete('/:analysisId', async (req, res) => {
+  try {
+    const { analysisId } = req.params;
+    
+    const analysis = await Analysis.findById(analysisId);
+    
+    if (!analysis) {
+      return res.status(404).json({ 
+        success: false, 
+        error: 'Analysis not found' 
+      });
+    }
+
+    await Analysis.findByIdAndDelete(analysisId);
+
+    res.json({ 
+      success: true, 
+      message: 'Analysis deleted successfully' 
+    });
+  } catch (error) {
+    console.error('Error deleting analysis:', error);
+    res.status(500).json({ 
+      success: false, 
+      error: 'Failed to delete analysis' 
+    });
+  }
+});
+
 module.exports = router; 

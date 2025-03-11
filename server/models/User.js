@@ -15,6 +15,12 @@ const mongoose = require('mongoose');
  * @property {Date} premiumSince - When the user became premium
  * @property {Date} premiumUntil - When the premium access expires
  * @property {string} subscriptionStatus - Current subscription status
+ * @property {string} stripeCustomerId - Stripe Customer ID
+ * @property {string} stripeSubscriptionId - Stripe Subscription ID
+ * @property {Date} lastPayment - Last payment timestamp
+ * @property {Number} lastPaymentAmount - Last payment amount
+ * @property {String} lastPaymentCurrency - Last payment currency
+ * @property {String} lastPaymentIntent - Last payment intent
  */
 const userSchema = new mongoose.Schema({
   firebaseUid: {
@@ -65,15 +71,47 @@ const userSchema = new mongoose.Schema({
     type: Date,
     default: null
   },
-  premiumUntil: {
+  // Free Trial Fields
+  isTrialActive: {
+    type: Boolean,
+    default: false,
+    index: true
+  },
+  trialStartDate: {
     type: Date,
     default: null
   },
-  subscriptionStatus: {
+  trialEndDate: {
+    type: Date,
+    default: null
+  },
+  hasUsedTrial: {
+    type: Boolean,
+    default: false
+  },
+  // Stripe Integration Fields
+  stripeCustomerId: {
     type: String,
-    enum: ['none', 'active', 'cancelled', 'expired'],
-    default: 'none'
+    sparse: true,
+    unique: true
+  },
+  stripeSubscriptionId: {
+    type: String,
+    sparse: true,
+    unique: true
+  },
+  lastPayment: {
+    date: Date,
+    amount: Number,
+    currency: String,
+    paymentIntent: String
+  },
+  updatedAt: {
+    type: Date,
+    default: Date.now
   }
+}, {
+  timestamps: true
 });
 
 // Instance methods
@@ -90,40 +128,58 @@ userSchema.methods.addAnalysis = async function(analysisId) {
   return this;
 };
 
-// Premium-related instance methods
-userSchema.methods.activatePremium = async function(durationInDays = 30) {
+// Premium and Trial-related instance methods
+userSchema.methods.activatePremium = async function() {
   const now = new Date();
   this.isPremium = true;
   this.premiumSince = this.premiumSince || now;
-  this.premiumUntil = new Date(now.getTime() + durationInDays * 24 * 60 * 60 * 1000);
-  this.subscriptionStatus = 'active';
+  // If user was in trial, end it
+  if (this.isTrialActive) {
+    this.endTrial();
+  }
   return this.save();
 };
 
-userSchema.methods.deactivatePremium = async function() {
-  this.isPremium = false;
-  this.subscriptionStatus = 'expired';
-  return this.save();
-};
-
-userSchema.methods.cancelPremium = async function() {
-  this.subscriptionStatus = 'cancelled';
-  return this.save();
-};
-
-userSchema.methods.checkPremiumStatus = function() {
-  if (!this.isPremium) return false;
-  if (!this.premiumUntil) return false;
+userSchema.methods.startTrial = async function() {
+  if (this.hasUsedTrial || this.isPremium) {
+    throw new Error('User is not eligible for trial');
+  }
   
   const now = new Date();
-  if (now > this.premiumUntil) {
-    // Premium has expired
-    this.isPremium = false;
-    this.subscriptionStatus = 'expired';
+  this.isTrialActive = true;
+  this.trialStartDate = now;
+  this.trialEndDate = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000); // 14 days
+  this.hasUsedTrial = true;
+  return this.save();
+};
+
+userSchema.methods.endTrial = async function() {
+  this.isTrialActive = false;
+  this.trialEndDate = new Date(); // Set to current time
+  return this.save();
+};
+
+userSchema.methods.checkTrialStatus = function() {
+  if (!this.isTrialActive || !this.trialEndDate) {
+    return false;
+  }
+  
+  const now = new Date();
+  if (now > this.trialEndDate) {
+    // Trial has expired
+    this.isTrialActive = false;
     this.save(); // Save the updated status
     return false;
   }
   return true;
+};
+
+userSchema.methods.isEligibleForTrial = function() {
+  return !this.hasUsedTrial && !this.isPremium;
+};
+
+userSchema.methods.checkPremiumStatus = function() {
+  return this.isPremium || this.checkTrialStatus();
 };
 
 // Static methods
@@ -148,8 +204,62 @@ userSchema.statics.findExpiredPremiumUsers = function() {
   });
 };
 
-// Create indexes
-userSchema.index({ isPremium: 1, premiumUntil: 1 }); // Compound index for premium queries
+// Add static method to find users in trial
+userSchema.statics.findTrialUsers = function() {
+  return this.find({ 
+    isTrialActive: true,
+    trialEndDate: { $gt: new Date() }
+  });
+};
+
+// Add static method to find expired trial users
+userSchema.statics.findExpiredTrialUsers = function() {
+  return this.find({
+    isTrialActive: true,
+    trialEndDate: { $lt: new Date() }
+  });
+};
+
+// Compound index for premium status queries
+userSchema.index({ 
+  isPremium: 1, 
+  premiumUntil: 1 
+}, { 
+  name: 'premium_status',
+  background: true,
+  // This index helps with queries checking active premium status
+  description: 'Supports queries for active premium users and expiration checks'
+});
+
+// Index for Stripe lookups
+userSchema.index({ 
+  stripeCustomerId: 1 
+}, {
+  name: 'stripe_customer',
+  background: true,
+  sparse: true,
+  description: 'Supports lookups by Stripe Customer ID'
+});
+
+userSchema.index({ 
+  stripeSubscriptionId: 1 
+}, {
+  name: 'stripe_subscription',
+  background: true,
+  sparse: true,
+  description: 'Supports lookups by Stripe Subscription ID'
+});
+
+// Add index for trial queries
+userSchema.index({ 
+  isTrialActive: 1, 
+  trialEndDate: 1,
+  hasUsedTrial: 1
+}, { 
+  name: 'trial_status',
+  background: true,
+  description: 'Supports queries for trial status and eligibility checks'
+});
 
 const User = mongoose.model('User', userSchema);
 

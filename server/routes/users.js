@@ -162,4 +162,107 @@ router.get('/:firebaseUid/analyses', async (req, res) => {
   }
 });
 
+// Get user status
+router.get('/:uid/status', async (req, res) => {
+  try {
+    const user = await User.findOne({ firebaseUid: req.params.uid });
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+
+    // Check trial status if needed
+    if (user.isTrialActive) {
+      user.checkTrialStatus(); // This will update the status if trial has expired
+    }
+
+    // Return relevant status information
+    res.json({
+      isPremium: user.isPremium,
+      isTrialActive: user.isTrialActive,
+      hasUsedTrial: user.hasUsedTrial,
+      trialStartDate: user.trialStartDate,
+      trialEndDate: user.trialEndDate,
+      premiumSince: user.premiumSince
+    });
+  } catch (error) {
+    console.error('Error fetching user status:', error);
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+// Start trial endpoint
+router.post('/start-trial', async (req, res) => {
+  try {
+    const { userId, email } = req.body;
+
+    if (!userId || !email) {
+      return res.status(400).json({
+        success: false,
+        error: 'Missing required fields'
+      });
+    }
+
+    // Find the user
+    const user = await User.findOne({ firebaseUid: userId });
+    
+    if (!user) {
+      return res.status(404).json({
+        success: false,
+        error: 'User not found'
+      });
+    }
+
+    // Check if user is eligible for trial
+    if (user.isPremium) {
+      return res.status(400).json({
+        success: false,
+        error: 'User already has premium access'
+      });
+    }
+
+    if (user.hasUsedTrial) {
+      return res.status(400).json({
+        success: false,
+        error: 'User has already used their trial'
+      });
+    }
+
+    if (user.isTrialActive) {
+      return res.status(400).json({
+        success: false,
+        error: 'User already has an active trial'
+      });
+    }
+
+    // Start the trial
+    const now = new Date();
+    user.isTrialActive = true;
+    user.trialStartDate = now;
+    user.trialEndDate = new Date(now.getTime() + 14 * 24 * 60 * 60 * 1000); // 14 days
+    user.hasUsedTrial = true;
+
+    await user.save();
+
+    console.log('Trial activated successfully:', {
+      userId: user.firebaseUid,
+      email: user.email,
+      trialStartDate: user.trialStartDate,
+      trialEndDate: user.trialEndDate
+    });
+
+    res.json({
+      success: true,
+      message: 'Trial activated successfully',
+      trialEndDate: user.trialEndDate
+    });
+  } catch (error) {
+    console.error('Error starting trial:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 module.exports = router; 
