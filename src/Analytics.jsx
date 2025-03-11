@@ -3,6 +3,7 @@ import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from './contexts/AuthContext';
 import { toast } from 'react-toastify';
 import { motion, AnimatePresence } from 'framer-motion';
+import { API_URL } from './config/api';
 import './index.css';
 
 const Analytics = ({ setCurrentPage }) => {
@@ -20,7 +21,6 @@ const Analytics = ({ setCurrentPage }) => {
 
   // Separate base URLs for different types of endpoints
   const herokuBase = import.meta.env.VITE_HEROKU; // Heroku for Python analysis backend
-  const localBase = 'http://localhost:5000';      // Local for Node.js user management
 
   // Add view navigation array
   const viewOrder = ['ranges', 'metrics', 'hands'];
@@ -450,22 +450,22 @@ const Analytics = ({ setCurrentPage }) => {
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
-  // Add user status fetch with local base
+  // Add user status fetch with API_URL
   useEffect(() => {
     const fetchUserStatus = async () => {
       if (!currentUser?.uid) return;
       
       try {
-        console.log('Fetching user status from:', `${localBase}/api/users/${currentUser.uid}/status`);
+        console.log('Fetching user status from:', `${API_URL}/users/${currentUser.uid}/status`);
         const response = await fetch(
-          `${localBase}/api/users/${currentUser.uid}/status`,
+          `${API_URL}/users/${currentUser.uid}/status`,
           {
             method: 'GET',
             headers: {
               'Accept': 'application/json',
               'Content-Type': 'application/json',
             },
-            credentials: 'include' // Changed from same-origin to include
+            credentials: 'include'
           }
         );
         
