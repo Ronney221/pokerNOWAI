@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from './contexts/AuthContext';
 import { toast } from 'react-toastify';
-import { getAuth, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { getAuth, GoogleAuthProvider, signInWithPopup, sendPasswordResetEmail } from 'firebase/auth';
 
 const Login = ({ setCurrentPage }) => {
   const [formData, setFormData] = useState({
@@ -10,6 +10,9 @@ const Login = ({ setCurrentPage }) => {
   });
   const [loading, setLoading] = useState(false);
   const [focused, setFocused] = useState(null);
+  const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
+  const [resetEmail, setResetEmail] = useState('');
+  const [resetLoading, setResetLoading] = useState(false);
   const { login } = useAuth();
 
   // Apple-inspired animation for form appearance
@@ -62,6 +65,34 @@ const Login = ({ setCurrentPage }) => {
       toast.error(error.message || 'Failed to sign in with Google');
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleForgotPassword = async (e) => {
+    e.preventDefault();
+    
+    if (!resetEmail) {
+      toast.error('Please enter your email address');
+      return;
+    }
+
+    try {
+      setResetLoading(true);
+      const auth = getAuth();
+      await sendPasswordResetEmail(auth, resetEmail);
+      
+      toast.success('Password reset email sent! Please check your inbox.');
+      setIsForgotPasswordOpen(false);
+      setResetEmail('');
+    } catch (error) {
+      console.error('Error sending reset email:', error);
+      if (error.code === 'auth/user-not-found') {
+        toast.error('No account found with this email address');
+      } else {
+        toast.error(error.message || 'Failed to send reset email');
+      }
+    } finally {
+      setResetLoading(false);
     }
   };
 
@@ -152,7 +183,12 @@ const Login = ({ setCurrentPage }) => {
               </div>
 
               <div className="text-right">
-                <a href="#" className="text-sm text-primary hover:underline">Forgot password?</a>
+                <button 
+                  onClick={() => setIsForgotPasswordOpen(true)} 
+                  className="text-sm text-primary hover:underline"
+                >
+                  Forgot password?
+                </button>
               </div>
 
               <div className="relative my-6 text-center">
@@ -227,6 +263,62 @@ const Login = ({ setCurrentPage }) => {
           </p>
         </div>
       </div>
+
+      {/* Forgot Password Modal */}
+      {isForgotPasswordOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 px-4">
+          <div className="card bg-base-100 shadow-xl backdrop-blur-sm border border-base-300 w-full max-w-md">
+            <div className="card-body p-8">
+              <h3 className="text-2xl font-light mb-2">Reset Password</h3>
+              <p className="text-base-content/70 text-sm mb-6">
+                Enter your email address and we'll send you instructions to reset your password.
+              </p>
+
+              <form onSubmit={handleForgotPassword} className="space-y-4">
+                <div>
+                  <div className="relative">
+                    <input
+                      type="email"
+                      value={resetEmail}
+                      onChange={(e) => setResetEmail(e.target.value)}
+                      placeholder="Enter your email"
+                      className="w-full px-4 py-3 bg-base-200/50 border border-base-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex gap-3 justify-end mt-6">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setIsForgotPasswordOpen(false);
+                      setResetEmail('');
+                    }}
+                    className="btn btn-ghost"
+                    disabled={resetLoading}
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="submit"
+                    className="btn btn-primary"
+                    disabled={resetLoading}
+                  >
+                    {resetLoading ? (
+                      <>
+                        <span className="loading loading-spinner loading-sm"></span>
+                        Sending...
+                      </>
+                    ) : (
+                      'Send Reset Link'
+                    )}
+                  </button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

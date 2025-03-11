@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from './contexts/AuthContext';
 import { toast } from 'react-toastify';
+import { getAuth, updatePassword, reauthenticateWithCredential, EmailAuthProvider } from 'firebase/auth';
+import { API_URL } from './config/api';
 
 const Profile = ({ setCurrentPage }) => {
   const { currentUser, updateUserProfile, refreshUserStatus } = useAuth();
@@ -9,6 +11,13 @@ const Profile = ({ setCurrentPage }) => {
   const [newUsername, setNewUsername] = useState(currentUser?.displayName || '');
   const [userStatus, setUserStatus] = useState(null);
   const [trialLoading, setTrialLoading] = useState(false);
+  const [isChangingPassword, setIsChangingPassword] = useState(false);
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
+  const [passwordError, setPasswordError] = useState(null);
   
   // Animation effect when component mounts
   useEffect(() => {
@@ -21,7 +30,15 @@ const Profile = ({ setCurrentPage }) => {
     // Fetch user status
     const fetchUserStatus = async () => {
       try {
-        const response = await fetch(`http://localhost:5000/api/users/${currentUser.uid}/status`);
+        const response = await fetch(`${API_URL}/users/${currentUser.uid}/status`, {
+          method: 'GET',
+          headers: {
+            'Accept': 'application/json',
+            'Content-Type': 'application/json',
+            'Origin': window.location.origin
+          },
+          credentials: 'include'
+        });
         const data = await response.json();
         setUserStatus(data);
       } catch (error) {
@@ -102,26 +119,37 @@ const Profile = ({ setCurrentPage }) => {
   const handleStartTrial = async () => {
     try {
       setTrialLoading(true);
-      const response = await fetch('http://localhost:5000/api/users/start-trial', {
+      const response = await fetch(`${API_URL}/users/start-trial`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          'Accept': 'application/json',
+          'Origin': window.location.origin
         },
+        credentials: 'include',
         body: JSON.stringify({
           userId: currentUser.uid,
-          email: currentUser.email
+          email: currentUser.email,
+          displayName: currentUser.displayName || currentUser.email.split('@')[0]
         })
       });
 
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Failed to start trial');
+        throw new Error(data.error || data.message || 'Failed to start trial');
       }
 
       // Refresh user status
       await refreshUserStatus();
-      const newStatus = await fetch(`http://localhost:5000/api/users/${currentUser.uid}/status`);
+      const newStatus = await fetch(`${API_URL}/users/${currentUser.uid}/status`, {
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+          'Origin': window.location.origin
+        },
+        credentials: 'include'
+      });
       const newStatusData = await newStatus.json();
       setUserStatus(newStatusData);
       
@@ -132,6 +160,82 @@ const Profile = ({ setCurrentPage }) => {
       toast.error(error.message || 'Failed to start trial. Please try again.');
     } finally {
       setTrialLoading(false);
+    }
+  };
+
+  const validatePassword = (password) => {
+    if (!password) {
+      setPasswordError(null);
+      return false;
+    }
+    
+    const hasMinLength = password.length >= 6;
+    const hasUppercase = /[A-Z]/.test(password);
+    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
+    const hasNumber = /\d/.test(password);
+    
+    if (!hasMinLength || !hasUppercase || !hasSpecialChar || !hasNumber) {
+      setPasswordError({
+        hasMinLength,
+        hasUppercase,
+        hasSpecialChar,
+        hasNumber
+      });
+      return false;
+    }
+    
+    setPasswordError(null);
+    return true;
+  };
+
+  const handlePasswordChange = async (e) => {
+    e.preventDefault();
+    
+    if (!passwordData.currentPassword || !passwordData.newPassword || !passwordData.confirmPassword) {
+      toast.error('Please fill in all password fields');
+      return;
+    }
+
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast.error('New passwords do not match');
+      return;
+    }
+
+    if (!validatePassword(passwordData.newPassword)) {
+      toast.error('New password does not meet requirements');
+      return;
+    }
+
+    try {
+      setLoading(true);
+      const auth = getAuth();
+      
+      // Re-authenticate user
+      const credential = EmailAuthProvider.credential(
+        currentUser.email,
+        passwordData.currentPassword
+      );
+      await reauthenticateWithCredential(currentUser, credential);
+      
+      // Update password
+      await updatePassword(currentUser, passwordData.newPassword);
+      
+      toast.success('Password updated successfully!');
+      setIsChangingPassword(false);
+      setPasswordData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+    } catch (error) {
+      console.error('Error updating password:', error);
+      if (error.code === 'auth/wrong-password') {
+        toast.error('Current password is incorrect');
+      } else {
+        toast.error(error.message || 'Failed to update password');
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -329,14 +433,106 @@ const Profile = ({ setCurrentPage }) => {
               <div className="card bg-base-200/50 rounded-xl border border-base-300/50">
                 <div className="card-body p-6">
                   <h3 className="text-sm font-medium uppercase tracking-wider text-base-content/70 mb-1">Account Security</h3>
-                  <div className="mt-2">
-                    <button className="btn btn-outline btn-primary btn-sm rounded-lg">
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                      </svg>
-                      Change Password
-                    </button>
-                  </div>
+                  {!isChangingPassword ? (
+                    <div className="mt-2">
+                      <button 
+                        className="btn btn-outline btn-primary btn-sm rounded-lg"
+                        onClick={() => setIsChangingPassword(true)}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                        </svg>
+                        Change Password
+                      </button>
+                    </div>
+                  ) : (
+                    <form onSubmit={handlePasswordChange} className="mt-4 space-y-4">
+                      <div>
+                        <input
+                          type="password"
+                          placeholder="Current Password"
+                          value={passwordData.currentPassword}
+                          onChange={(e) => setPasswordData(prev => ({ ...prev, currentPassword: e.target.value }))}
+                          className="w-full px-4 py-2 bg-base-100 border border-base-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                        />
+                      </div>
+                      <div>
+                        <input
+                          type="password"
+                          placeholder="New Password"
+                          value={passwordData.newPassword}
+                          onChange={(e) => {
+                            setPasswordData(prev => ({ ...prev, newPassword: e.target.value }));
+                            validatePassword(e.target.value);
+                          }}
+                          className="w-full px-4 py-2 bg-base-100 border border-base-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                        />
+                      </div>
+                      <div>
+                        <input
+                          type="password"
+                          placeholder="Confirm New Password"
+                          value={passwordData.confirmPassword}
+                          onChange={(e) => setPasswordData(prev => ({ ...prev, confirmPassword: e.target.value }))}
+                          className="w-full px-4 py-2 bg-base-100 border border-base-300 rounded-xl focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary"
+                        />
+                      </div>
+
+                      {/* Password requirements */}
+                      {passwordError && (
+                        <div className="text-xs text-base-content/60 px-1">
+                          <p>Password must have:</p>
+                          <ul className="pl-4 mt-1 space-y-0.5">
+                            <li className={`flex items-center gap-1 ${passwordError.hasMinLength === false ? 'text-error/80' : passwordError.hasMinLength === true ? 'text-success/80' : ''}`}>
+                              <span className="inline-block w-1 h-1 rounded-full bg-current"></span> At least 6 characters
+                            </li>
+                            <li className={`flex items-center gap-1 ${passwordError.hasUppercase === false ? 'text-error/80' : passwordError.hasUppercase === true ? 'text-success/80' : ''}`}>
+                              <span className="inline-block w-1 h-1 rounded-full bg-current"></span> One uppercase letter
+                            </li>
+                            <li className={`flex items-center gap-1 ${passwordError.hasNumber === false ? 'text-error/80' : passwordError.hasNumber === true ? 'text-success/80' : ''}`}>
+                              <span className="inline-block w-1 h-1 rounded-full bg-current"></span> One number
+                            </li>
+                            <li className={`flex items-center gap-1 ${passwordError.hasSpecialChar === false ? 'text-error/80' : passwordError.hasSpecialChar === true ? 'text-success/80' : ''}`}>
+                              <span className="inline-block w-1 h-1 rounded-full bg-current"></span> One special character
+                            </li>
+                          </ul>
+                        </div>
+                      )}
+
+                      <div className="flex gap-2 justify-end">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsChangingPassword(false);
+                            setPasswordData({
+                              currentPassword: '',
+                              newPassword: '',
+                              confirmPassword: ''
+                            });
+                            setPasswordError(null);
+                          }}
+                          className="btn btn-ghost btn-sm rounded-lg"
+                          disabled={loading}
+                        >
+                          Cancel
+                        </button>
+                        <button
+                          type="submit"
+                          className="btn btn-primary btn-sm rounded-lg"
+                          disabled={loading}
+                        >
+                          {loading ? (
+                            <>
+                              <span className="loading loading-spinner loading-sm"></span>
+                              Updating...
+                            </>
+                          ) : (
+                            'Update Password'
+                          )}
+                        </button>
+                      </div>
+                    </form>
+                  )}
                 </div>
               </div>
             </div>
