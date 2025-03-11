@@ -1,11 +1,11 @@
 // src/analytics.jsx
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useRef } from 'react';
 import { useAuth } from './contexts/AuthContext';
 import { toast } from 'react-toastify';
 import { motion, AnimatePresence } from 'framer-motion';
 import './index.css';
 
-const Analytics = () => {
+const Analytics = ({ setCurrentPage }) => {
   const { currentUser } = useAuth();
   const [analysisData, setAnalysisData] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -16,8 +16,31 @@ const Analytics = () => {
   const [sortConfig, setSortConfig] = useState({ key: null, direction: 'asc' });
   const [isLoading, setIsLoading] = useState(true);
   const [selectedView, setSelectedView] = useState(null);
+  const [userStatus, setUserStatus] = useState(null);
 
-  const apiBase = import.meta.env.VITE_HEROKU || 'http://127.0.0.1:5000';
+  // Separate base URLs for different types of endpoints
+  const herokuBase = import.meta.env.VITE_HEROKU; // Heroku for Python analysis backend
+  const localBase = 'http://localhost:5000';      // Local for Node.js user management
+
+  // Add view navigation array
+  const viewOrder = ['ranges', 'metrics', 'hands'];
+  
+  // Add navigation functions
+  const navigateView = (direction) => {
+    if (!selectedView) return;
+    
+    const currentIndex = viewOrder.indexOf(selectedView);
+    if (currentIndex === -1) return;
+    
+    let newIndex;
+    if (direction === 'next') {
+      newIndex = (currentIndex + 1) % viewOrder.length;
+    } else {
+      newIndex = (currentIndex - 1 + viewOrder.length) % viewOrder.length;
+    }
+    
+    setSelectedView(viewOrder[newIndex]);
+  };
 
   // Sorting function
   const sortData = (data, key, direction) => {
@@ -64,7 +87,7 @@ const Analytics = () => {
     });
   };
 
-  // Fetch analysis data when component mounts
+  // Fetch analysis data with Heroku base
   useEffect(() => {
     const fetchAnalysis = async () => {
       setIsLoading(true);
@@ -72,10 +95,10 @@ const Analytics = () => {
       
       try {
         //console.log('Fetching analysis data...');
-        //console.log('API URL:', `${apiBase}/api/analysis/${currentUser.uid}`);
+        //console.log('API URL:', `${herokuBase}/api/analysis/${currentUser.uid}`);
         
         const response = await fetch(
-          `${apiBase}/api/analysis/${currentUser.uid}`,
+          `${herokuBase}/api/analysis/${currentUser.uid}`,
           {
             method: 'GET',
             headers: {
@@ -153,49 +176,7 @@ const Analytics = () => {
     if (currentUser) {
       fetchAnalysis();
     }
-  }, [currentUser, apiBase]);
-
-  // Add API health check
-  const checkApiHealth = async () => {
-    try {
-      //console.log('Checking API health at:', `${apiBase}/health`);
-      const response = await fetch(`${apiBase}/health`, {
-        credentials: 'same-origin',
-        headers: {
-          'Accept': 'application/json'
-        }
-      });
-      
-      if (!response.ok) {
-        throw new Error(`Health check failed with status ${response.status}`);
-      }
-      
-      const data = await response.json();
-      //console.log('Health check response:', data);
-      
-      if (data.status !== 'healthy') {
-        console.warn('API health check failed:', data);
-        setError('API service is currently degraded. Some features may be unavailable.');
-      }
-    } catch (err) {
-      console.error('Health check failed:', err);
-      setError('Unable to connect to the API. Please try again later.');
-    }
-  };
-
-  // Call health check on component mount
-  useEffect(() => {
-    checkApiHealth();
-  }, []);
-
-  // Debug logging for selected data
-  useEffect(() => {
-    if (selectedAnalysis) {
-      //console.log('Selected analysis files:', selectedAnalysis.files);
-      //console.log('Selected player tab:', selectedPlayerTab);
-      //console.log('Selected chart tab:', selectedChartTab);
-    }
-  }, [selectedAnalysis, selectedPlayerTab, selectedChartTab]);
+  }, [currentUser, herokuBase]);
 
   // Format date helper function
   const formatDate = (dateString) => {
@@ -463,6 +444,61 @@ const Analytics = () => {
     </motion.div>
   );
 
+  const handlePageChange = (page) => {
+    setCurrentPage(page);
+    // Smooth scroll to top
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  // Add user status fetch with local base
+  useEffect(() => {
+    const fetchUserStatus = async () => {
+      if (!currentUser?.uid) return;
+      
+      try {
+        console.log('Fetching user status from:', `${localBase}/api/users/${currentUser.uid}/status`);
+        const response = await fetch(
+          `${localBase}/api/users/${currentUser.uid}/status`,
+          {
+            method: 'GET',
+            headers: {
+              'Accept': 'application/json',
+              'Content-Type': 'application/json',
+            },
+            credentials: 'include' // Changed from same-origin to include
+          }
+        );
+        
+        if (!response.ok) {
+          throw new Error(`Failed to fetch user status: ${response.status}`);
+        }
+        
+        const data = await response.json();
+        console.log('User Status Response:', data);
+        
+        setUserStatus(data);
+      } catch (err) {
+        console.error('Error fetching user status:', err);
+      }
+    };
+
+    fetchUserStatus();
+  }, [currentUser]);
+
+  // Debug logging for user status
+  useEffect(() => {
+    console.log('Current User Status:', {
+      uid: currentUser?.uid,
+      userStatus,
+      isPremium: userStatus?.isPremium,
+      isTrialActive: userStatus?.isTrialActive,
+      hasAccess: userStatus?.isPremium || userStatus?.isTrialActive
+    });
+  }, [currentUser, userStatus]);
+
+  // Modify the premium content check to use userStatus
+  const shouldShowPremiumContent = userStatus?.isPremium || userStatus?.isTrialActive;
+  
   if (!currentUser) {
     return (
       <div className="min-h-screen bg-gradient-to-b from-base-100 to-base-200/50 py-12 flex items-center justify-center">
@@ -470,7 +506,7 @@ const Analytics = () => {
           <div className="card-body text-center p-8">
             <h2 className="text-2xl font-bold mb-4">Please Log In</h2>
             <p className="opacity-70 mb-6">You need to be logged in to view analytics.</p>
-            <button className="btn btn-primary" onClick={() => window.location.href = '/login'}>
+            <button className="btn btn-primary" onClick={() => handlePageChange('login')}>
               Log In
             </button>
           </div>
@@ -502,7 +538,7 @@ const Analytics = () => {
             </div>
             <h2 className="text-2xl font-bold mb-4">Error Loading Analysis</h2>
             <p className="opacity-70 mb-6">{error}</p>
-            <button className="btn btn-primary" onClick={() => window.location.href = '/fullLogUpload'}>
+            <button className="btn btn-primary" onClick={() => handlePageChange('fullLogUpload')}>
               Upload Hand History
             </button>
           </div>
@@ -529,7 +565,7 @@ const Analytics = () => {
             <div className="dropdown w-full">
               <label tabIndex={0} className="btn btn-lg w-full">
                 {selectedAnalysis ? 
-                  `Analysis from ${formatDate(selectedAnalysis.timestamp)}` : 
+                  selectedAnalysis.name || `Analysis from ${formatDate(selectedAnalysis.timestamp)}` : 
                   'Select Analysis'}
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
@@ -537,20 +573,24 @@ const Analytics = () => {
               </label>
               <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow-lg bg-base-200 rounded-box w-full max-h-96 overflow-y-auto">
                 {analysisData?.analysis
-                  .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp)) // Sort newest first
-                  .map((analysis, index) => (
-                    <li key={analysis.analysisId}>
-                      <button 
-                        className={`py-3 px-4 hover:bg-base-300 rounded-lg ${
-                          selectedAnalysis?.analysisId === analysis.analysisId ? 'bg-primary/10' : ''
-                        }`}
-                        onClick={() => setSelectedAnalysis(analysis)}
-                      >
-                        <div className="flex flex-col items-start">
-                          <span className="font-medium">Game {analysisData.analysis.length - index}</span>
-                          <span className="text-sm opacity-70">{formatDate(analysis.timestamp)}</span>
-                        </div>
-                      </button>
+                  .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+                  .map((analysis) => (
+                    <li key={analysis.analysisId} className="mb-2">
+                      <div className="flex items-center justify-between p-3 hover:bg-base-300 rounded-lg">
+                        <button 
+                          className="flex-1 text-left"
+                          onClick={() => setSelectedAnalysis(analysis)}
+                        >
+                          <div className="flex flex-col">
+                            <span className="font-medium">
+                              {analysis.name || `Analysis ${formatDate(analysis.timestamp)}`}
+                            </span>
+                            <span className="text-sm opacity-70">
+                              {formatDate(analysis.timestamp)}
+                            </span>
+                          </div>
+                        </button>
+                      </div>
                     </li>
                   ))}
               </ul>
@@ -622,8 +662,26 @@ const Analytics = () => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="card bg-base-100/90 shadow-xl backdrop-blur-sm border border-base-200"
+              className="card bg-base-100/90 shadow-xl backdrop-blur-sm border border-base-200 relative"
             >
+              {/* Navigation Arrows */}
+              <button 
+                className="btn btn-circle btn-lg btn-ghost absolute top-1/2 -left-20 transform -translate-y-1/2 hidden md:flex items-center justify-center w-16 h-16 hover:bg-base-200/50"
+                onClick={() => navigateView('prev')}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <button 
+                className="btn btn-circle btn-lg btn-ghost absolute top-1/2 -right-20 transform -translate-y-1/2 hidden md:flex items-center justify-center w-16 h-16 hover:bg-base-200/50"
+                onClick={() => navigateView('next')}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+
               <div className="card-body p-8">
                 <div className="flex justify-between items-center mb-8">
                   <h2 className="text-3xl font-bold">
@@ -638,8 +696,28 @@ const Analytics = () => {
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                              </svg>
-                            </button>
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Mobile Navigation (only visible on small screens) */}
+                <div className="flex justify-between items-center mb-4 md:hidden">
+                  <button 
+                    className="btn btn-circle btn-ghost"
+                    onClick={() => navigateView('prev')}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                  <button 
+                    className="btn btn-circle btn-ghost"
+                    onClick={() => navigateView('next')}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
                 </div>
                 
                 {selectedView === 'ranges' && (
@@ -705,41 +783,50 @@ const Analytics = () => {
                             <div className="flex items-center justify-between">
                               <h3 className="text-xl font-medium">Range Analysis</h3>
                               <div className="text-sm opacity-70">
-                                Showing first 10 preflop actions
+                                Showing first 12 preflop actions
                               </div>
                             </div>
                             
-                            {/* Preflop Ranges Grid - Limited to 10 cards */}
+                            {/* Preflop Ranges Grid */}
                             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                               {selectedAnalysis?.files.players && 
                                 selectedAnalysis.files.players[`${selectedPlayerTab}.json`]
                                   ?.filter(player => player)
-                                  //.slice(0, 8)
+                                  .slice(0, shouldShowPremiumContent ? undefined : 12)
                                   .map((player, index) => (
                                     <PlayerCard key={index} player={player} />
                                   ))}
-                              
-                              {/* Premium Lock Overlay for Additional Cards */}
-                              {/* {selectedAnalysis?.files.players && 
-                                selectedAnalysis.files.players[`${selectedPlayerTab}.json`]?.length > 8 && (
-                                <div className="col-span-full">
-                                  <div className="card bg-base-100/90 shadow-xl backdrop-blur-sm border border-base-200 p-8 text-center">
-                                    <div className="text-warning mb-4">
-                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                                      </svg>
-                                    </div>
-                                    <h3 className="text-xl font-bold mb-2">Premium Feature</h3>
-                                    <p className="text-base-content/70 mb-4">
-                                       Upgrade to view <strong className="text-lg">{selectedAnalysis.files.players[`${selectedPlayerTab}.json`].length - 8}</strong> more cards and unlock advanced analysis features. 
-                                    </p>
-                                    <button className="btn btn-primary">
-                                      Upgrade to Premium
-                                    </button>
-                                  </div>
-                              </div>
-                              )} */}
                             </div>
+
+                            {/* Premium/Trial Prompt - Only show if user has no access */}
+                            {selectedAnalysis?.files.players && 
+                             selectedAnalysis.files.players[`${selectedPlayerTab}.json`]?.length > 12 &&
+                             !shouldShowPremiumContent && (
+                              <div className="card bg-base-100/90 shadow-xl backdrop-blur-sm border border-base-200 p-8 text-center mt-8">
+                                <div className="text-warning mb-4">
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                  </svg>
+                                </div>
+                                <h3 className="text-xl font-bold mb-2">
+                                  See {selectedAnalysis.files.players[`${selectedPlayerTab}.json`].length - 12} More Preflop Actions
+                                </h3>
+                                <p className="text-base-content/70 mb-6">
+                                  Start your free trial to unlock all preflop actions and get complete insights into player tendencies.
+                                </p>
+                                <div className="flex justify-center gap-4">
+                                  <button 
+                                    onClick={() => handlePageChange('payment')}
+                                    className="btn btn-primary"
+                                  >
+                                    Start Free Trial
+                                  </button>
+                                </div>
+                                <p className="text-sm text-base-content/70 mt-4">
+                                  No credit card required • 14-day free trial • Cancel anytime
+                                </p>
+                              </div>
+                            )}
                           </div>
 
                           {/* No Data Message */}
@@ -749,10 +836,10 @@ const Analytics = () => {
                               <div className="text-warning mb-4">
                                 <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                                </svg>
-                        </div>
+                    </svg>
+                  </div>
                               <p className="text-lg opacity-70">No range data available for this player</p>
-                      </div>
+                        </div>
                           )}
                         </motion.div>
                       </AnimatePresence>
