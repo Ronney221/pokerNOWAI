@@ -24,6 +24,7 @@ export function AuthProvider({ children }) {
   const [currentUser, setCurrentUser] = useState(null);
   const [loading, setLoading] = useState(true);
   const [verificationStatus, setVerificationStatus] = useState('pending'); // 'pending', 'verified', 'unverified'
+  const [userStatus, setUserStatus] = useState(null);
 
   async function signup(email, password, username) {
     try {
@@ -151,6 +152,23 @@ export function AuthProvider({ children }) {
     }
   }
 
+  const refreshUserStatus = async () => {
+    if (!currentUser) return;
+    
+    try {
+      const response = await fetch(`http://localhost:5000/api/users/${currentUser.uid}/status`);
+      if (!response.ok) {
+        throw new Error('Failed to refresh user status');
+      }
+      const data = await response.json();
+      setUserStatus(data);
+      return data;
+    } catch (error) {
+      console.error('Error refreshing user status:', error);
+      throw error;
+    }
+  };
+
   // Check verification status periodically
   useEffect(() => {
     if (currentUser) {
@@ -179,7 +197,9 @@ export function AuthProvider({ children }) {
 
   const value = {
     currentUser,
+    userStatus,
     verificationStatus,
+    refreshUserStatus,
     signup,
     login,
     logout,
