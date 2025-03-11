@@ -57,7 +57,7 @@ const allowedOrigins = [
   'http://localhost:4173',  // Vite preview
   'https://pokernowai.vercel.app', // Production URL
   'https://www.pokernowai.vercel.app',
-  'https://pokernowai.com'
+  'https://www.pokernowai.com'
 ];
 
 // Configure CORS
