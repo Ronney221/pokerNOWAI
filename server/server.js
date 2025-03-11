@@ -4,17 +4,10 @@ const dotenv = require('dotenv');
 const path = require('path');
 const mongoose = require('mongoose');
 const User = require('./models/User');
-const admin = require('firebase-admin');
 
 // Load environment variables from root .env
 const envPath = path.resolve(__dirname, '../.env');
 dotenv.config({ path: envPath });
-
-// Initialize Firebase Admin
-const serviceAccount = require('./firebase-service-account.json');
-admin.initializeApp({
-  credential: admin.credential.cert(serviceAccount)
-});
 
 // Debug environment variables (without exposing secrets)
 console.log('Environment Variables Check:', {
@@ -58,46 +51,28 @@ console.log('MongoDB connection:', process.env.MONGODB_URI ? 'Configured' : 'Mis
 const app = express();
 const port = process.env.PORT || 5000;
 
+// CORS configuration for development and production
+const allowedOrigins = [
+  'http://localhost:5173',  // Vite dev server
+  'http://localhost:4173',  // Vite preview
+  'https://pokernowai.vercel.app', // Production URL
+  'https://www.pokernowai.vercel.app'
+];
+
 // Configure CORS
-const corsOptions = {
-  origin: process.env.NODE_ENV === 'production' 
-    ? ['https://www.pokernowai.com', 'https://pokernowai.com']
-    : 'http://localhost:5173',
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'Origin']
-};
-
-// Apply CORS configuration
-app.use(cors(corsOptions));
-app.use(express.json());
-
-// Firebase Auth Middleware
-const verifyFirebaseToken = async (req, res, next) => {
-  try {
-    const authHeader = req.headers.authorization;
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-      return res.status(401).json({ 
-        error: 'Unauthorized',
-        details: 'No token provided'
-      });
+app.use(cors({
+  origin: function(origin, callback) {
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.indexOf(origin) === -1) {
+      const msg = 'The CORS policy for this site does not allow access from the specified Origin.';
+      return callback(new Error(msg), false);
     }
-
-    const idToken = authHeader.split('Bearer ')[1];
-    const decodedToken = await admin.auth().verifyIdToken(idToken);
-    req.user = decodedToken;
-    next();
-  } catch (error) {
-    console.error('Auth Error:', error);
-    res.status(401).json({ 
-      error: 'Unauthorized',
-      details: error.message
-    });
-  }
-};
-
-// Apply auth middleware to protected routes
-app.use('/api/users', verifyFirebaseToken);
+    return callback(null, true);
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'Accept', 'stripe-signature']
+}));
 
 // Webhook endpoint must come before body parser
 app.post('/api/webhook', express.raw({ type: 'application/json' }), async (req, res) => {
