@@ -159,8 +159,8 @@ const SharedLedger = ({ ledgerId, setCurrentPage }) => {
                 <div className="divide-y divide-base-200">
                   {ledger.players.map((player, index) => {
                     // For cents games, convert amounts to cents before calculating profit
-                    const buyIn = ledger.denomination === 'cents' ? player.buyIn * 100 : player.buyIn;
-                    const cashOut = ledger.denomination === 'cents' ? player.cashOut * 100 : player.cashOut;
+                    const buyIn = ledger.denomination === 'cents' ? player.buyIn * 100 * 100 : player.buyIn;
+                    const cashOut = ledger.denomination === 'cents' ? player.cashOut * 100 * 100: player.cashOut;
                     const profit = cashOut - buyIn;
                     
                     return (
@@ -242,37 +242,64 @@ const SharedLedger = ({ ledgerId, setCurrentPage }) => {
         {/* Transactions Section */}
         <div className="card bg-base-100 shadow-xl overflow-hidden">
           <div className="p-6">
-            <h3 className="text-xl font-semibold mb-6 flex items-center">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-              </svg>
-              Settlement Transactions
-            </h3>
+            <div className="flex items-center justify-between mb-6">
+              <h3 className="text-xl font-semibold flex items-center gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary/70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+                </svg>
+                Settlement Transactions
+              </h3>
+              <div className="text-sm text-base-content/70">
+                {ledger.transactions.length} transactions
+              </div>
+            </div>
             <div className="overflow-x-auto">
-              <div className="min-w-full rounded-lg overflow-hidden">
-                <div className="grid grid-cols-9 bg-base-200 p-4 font-medium text-sm">
-                  <div className="col-span-3">From</div>
-                  <div className="col-span-3">To</div>
-                  <div className="col-span-3 text-right">Amount</div>
-                </div>
-                <div className="divide-y divide-base-200">
-                  {ledger.transactions.map((tx, index) => {
-                    // Transaction amounts are in dollars, convert to cents for cents games
-                    const amount = ledger.denomination === 'cents' 
-                      ? parseFloat(tx.amount) * 100 * 100  // First 100 for dollars->cents, second 100 to match player amounts
-                      : parseFloat(tx.amount) * 100;
-                      
-                    return (
-                      <div key={index} className="grid grid-cols-9 p-4 hover:bg-base-200/50 transition-colors">
-                        <div className="col-span-3 font-medium">{tx.from}</div>
-                        <div className="col-span-3 font-medium">{tx.to}</div>
-                        <div className="col-span-3 text-right text-success font-semibold">
-                          ${formatLedgerMoney(amount)}
+              <div className="min-w-full rounded-lg overflow-hidden space-y-4">
+                {ledger.transactions.map((tx, index) => {
+                  // Transaction amounts are in dollars, convert to cents for cents games
+                  const amount = ledger.denomination === 'cents' 
+                    ? parseFloat(tx.amount) * 100 * 100  // First 100 for dollars->cents, second 100 to match player amounts
+                    : parseFloat(tx.amount) * 100;
+                    
+                  return (
+                    <div key={index} className="group flex items-center justify-between p-6 bg-base-200/30 rounded-2xl hover:bg-base-200/50 transition-all duration-300 cursor-pointer">
+                      <div className="flex-1 grid grid-cols-7 items-center gap-4">
+                        {/* From Player */}
+                        <div className="col-span-2">
+                          <div className="flex items-center gap-3 bg-base-200/50 px-4 py-2 rounded-xl group-hover:bg-base-200/70 transition-colors">
+                            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary/70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                              </svg>
+                            </div>
+                            <span className="font-medium text-base-content/90">{tx.from}</span>
+                          </div>
+                        </div>
+
+                        {/* Arrow and Amount */}
+                        <div className="col-span-3 flex items-center justify-center gap-4">
+                          <div className="w-12 h-[2px] bg-base-content/20 group-hover:bg-primary/30 transition-colors" />
+                          <div className="font-semibold text-success bg-success/10 px-6 py-2 rounded-full group-hover:bg-success/20 transition-all duration-300 min-w-[120px] text-center">
+                            ${formatLedgerMoney(amount)}
+                          </div>
+                          <div className="w-12 h-[2px] bg-base-content/20 group-hover:bg-primary/30 transition-colors" />
+                        </div>
+
+                        {/* To Player */}
+                        <div className="col-span-2">
+                          <div className="flex items-center gap-3 bg-base-200/50 px-4 py-2 rounded-xl group-hover:bg-base-200/70 transition-colors">
+                            <div className="w-8 h-8 rounded-full bg-secondary/10 flex items-center justify-center">
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-secondary/70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                              </svg>
+                            </div>
+                            <span className="font-medium text-base-content/90">{tx.to}</span>
+                          </div>
                         </div>
                       </div>
-                    );
-                  })}
-                </div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
           </div>
