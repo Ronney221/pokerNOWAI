@@ -68,8 +68,6 @@ const SavedLedgers = ({ setCurrentPage }) => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedLedger, setSelectedLedger] = useState(null);
-  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
-  const [shareUrl, setShareUrl] = useState('');
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [ledgerToDelete, setLedgerToDelete] = useState(null);
   const [isTrackModalOpen, setIsTrackModalOpen] = useState(false);
@@ -161,26 +159,6 @@ const SavedLedgers = ({ setCurrentPage }) => {
       setLoading(false);
       setLedgerToDelete(null);
     }
-  };
-
-  const handleOpenShareModal = () => {
-    if (!selectedLedger) return;
-    
-    // Generate a proper shareable URL using the shared-ledger route
-    const baseUrl = window.location.origin;
-    setShareUrl(`${baseUrl}/shared-ledger/${selectedLedger._id}`);
-    setIsShareModalOpen(true);
-  };
-
-  const handleCopyShareLink = () => {
-    navigator.clipboard.writeText(shareUrl)
-      .then(() => {
-        toast.success('Link copied to clipboard!');
-      })
-      .catch(err => {
-        console.error('Failed to copy link:', err);
-        toast.error('Failed to copy link');
-      });
   };
 
   const formatDate = (dateString) => {
@@ -424,33 +402,11 @@ const SavedLedgers = ({ setCurrentPage }) => {
                   </h2>
                   <div className="text-sm opacity-70 mt-1">
                     {formatDate(selectedLedger.sessionDate)} at {formatTime(selectedLedger.sessionDate)}
-              </div>
-            </div>
-                <div className="flex gap-2">
-                  <motion.button 
-                    onClick={handleOpenShareModal}
-                    className="btn btn-ghost btn-sm gap-2"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
-                    </svg>
-                    Share
-                  </motion.button>
-                  <motion.button 
-                    onClick={(e) => handleOpenDeleteModal(e, selectedLedger)}
-                    className="btn btn-ghost btn-sm gap-2 text-error"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                    </svg>
-                    Delete
-                  </motion.button>
+                  </div>
                 </div>
               </div>
+
+              
               
               {/* Content sections */}
               <div className="space-y-8">
@@ -483,7 +439,13 @@ const SavedLedgers = ({ setCurrentPage }) => {
                     <div className="card-body">
                       <h3 className="text-lg font-medium opacity-70">Total Money Exchanged</h3>
                       <p className="text-4xl font-bold text-accent">
-                        ${formatLedgerMoney(selectedLedger.transactions.reduce((total, tx) => total + parseFloat(tx.amount), 0), selectedLedger)}
+                        ${formatLedgerMoney(selectedLedger.transactions.reduce((total, tx) => {
+                          // For cents games, convert amount to cents before adding
+                          const amount = selectedLedger.denomination === 'cents' 
+                            ? parseFloat(tx.amount) * 100 
+                            : parseFloat(tx.amount);
+                          return total + amount;
+                        }, 0), selectedLedger)}
                       </p>
                     </div>
                   </motion.div>
@@ -497,17 +459,6 @@ const SavedLedgers = ({ setCurrentPage }) => {
                   <div className="card-body">
                     <div className="flex justify-between items-center mb-6">
                       <h3 className="text-xl font-semibold">Players and Results</h3>
-                      <motion.button
-                        onClick={handleOpenTrackModal}
-                        className="btn btn-primary btn-sm gap-2"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                        </svg>
-                        Add result to Bankroll
-                      </motion.button>
                     </div>
                     <div className="overflow-x-auto">
                       <table className="table w-full">
@@ -541,9 +492,80 @@ const SavedLedgers = ({ setCurrentPage }) => {
                           })}
                         </tbody>
                       </table>
-              </div>
-            </div>
+                    </div>
+                  </div>
                 </motion.div>
+                  
+                  {/* Main Action Buttons Section */}
+              <div className="max-w-7xl mx-auto px-4 sm:px-6 mb-8">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                  {/* Share Game */}
+                  <motion.button
+                    onClick={() => {
+                      const baseUrl = window.location.origin;
+                      const shareUrl = `${baseUrl}/shared-ledger/${selectedLedger._id}`;
+                      navigator.clipboard.writeText(shareUrl)
+                        .then(() => toast.success('Share link copied to clipboard!'))
+                        .catch(err => {
+                          console.error('Failed to copy link:', err);
+                          toast.error('Failed to copy link');
+                        });
+                    }}
+                    className="group relative flex flex-col items-center gap-4 p-6 rounded-2xl bg-secondary/10 hover:bg-secondary/20 transition-all duration-300"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <div className="w-16 h-16 flex items-center justify-center rounded-full bg-secondary/20 group-hover:scale-110 transition-transform">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z" />
+                      </svg>
+                    </div>
+                    <div className="text-center">
+                      <h3 className="text-lg font-semibold mb-1">Share Game</h3>
+                      <p className="text-sm opacity-70">Copy link to clipboard</p>
+                    </div>
+                    <div className="absolute bottom-0 left-0 w-full h-1 bg-secondary scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
+                  </motion.button>
+
+                  {/* Add to Bankroll */}
+                  <motion.button
+                    onClick={handleOpenTrackModal}
+                    className="group relative flex flex-col items-center gap-4 p-6 rounded-2xl bg-primary/10 hover:bg-primary/20 transition-all duration-300"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <div className="w-16 h-16 flex items-center justify-center rounded-full bg-primary/20 group-hover:scale-110 transition-transform">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      </svg>
+                    </div>
+                    <div className="text-center">
+                      <h3 className="text-lg font-semibold mb-1">Add to Bankroll</h3>
+                      <p className="text-sm opacity-70">Track your performance</p>
+                    </div>
+                    <div className="absolute bottom-0 left-0 w-full h-1 bg-primary scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
+                  </motion.button>
+
+                  {/* Delete Game */}
+                  <motion.button
+                    onClick={(e) => handleOpenDeleteModal(e, selectedLedger)}
+                    className="group relative flex flex-col items-center gap-4 p-6 rounded-2xl bg-error/10 hover:bg-error/20 transition-all duration-300"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    <div className="w-16 h-16 flex items-center justify-center rounded-full bg-error/20 group-hover:scale-110 transition-transform">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-error" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
+                    </div>
+                    <div className="text-center">
+                      <h3 className="text-lg font-semibold mb-1">Delete Game</h3>
+                      <p className="text-sm opacity-70">Remove permanently</p>
+                    </div>
+                    <div className="absolute bottom-0 left-0 w-full h-1 bg-error scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
+                  </motion.button>
+                </div>
+              </div>
 
                 {/* Transactions Table */}
                 <motion.div 
@@ -579,8 +601,8 @@ const SavedLedgers = ({ setCurrentPage }) => {
                           ))}
                         </tbody>
                       </table>
-          </div>
-        </div>
+                    </div>
+                  </div>
                 </motion.div>
               </div>
             </motion.div>
@@ -593,44 +615,44 @@ const SavedLedgers = ({ setCurrentPage }) => {
               animate="animate"
               exit="exit"
             >
-          {/* Hero Header */}
+              {/* Hero Header */}
               <motion.div 
                 className="text-center mb-16"
                 initial={{ opacity: 0, y: -20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.6 }}
               >
-            <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-              Your Poker History
-            </h1>
+                <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                  Your Poker History
+                </h1>
                 <p className="text-lg opacity-80 max-w-2xl mx-auto">
-              Review your past sessions, track your progress, and gain insights from your poker journey.
-            </p>
+                  Review your past sessions, track your progress, and gain insights from your poker journey.
+                </p>
               </motion.div>
 
-          {error && (
+              {error && (
                 <motion.div 
                   className="max-w-xl mx-auto mb-10"
                   initial={{ opacity: 0, y: 20 }}
                   animate={{ opacity: 1, y: 0 }}
                 >
-              <div className="alert alert-error shadow-lg">
-                <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <div>
+                  <div className="alert alert-error shadow-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="stroke-current shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2m7-2a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                    <div>
                       <h3 className="font-bold">We encountered a problem</h3>
-                  <div className="text-sm">{error}</div>
-                </div>
+                      <div className="text-sm">{error}</div>
+                    </div>
                     <motion.button 
-                  className="btn btn-sm btn-outline"
-                  onClick={() => window.location.reload()}
+                      className="btn btn-sm btn-outline"
+                      onClick={() => window.location.reload()}
                       whileHover={{ scale: 1.05 }}
                       whileTap={{ scale: 0.95 }}
-                >
-                  Retry
+                    >
+                      Retry
                     </motion.button>
-              </div>
+                  </div>
                 </motion.div>
               )}
 
@@ -653,7 +675,7 @@ const SavedLedgers = ({ setCurrentPage }) => {
                   animate="visible"
                 >
                   <div className="card bg-base-100/90 shadow-xl backdrop-blur-sm border border-base-200">
-                <div className="card-body items-center text-center py-16">
+                    <div className="card-body items-center text-center py-16">
                       <motion.div 
                         className="mb-8"
                         initial={{ scale: 0 }}
@@ -661,24 +683,24 @@ const SavedLedgers = ({ setCurrentPage }) => {
                         transition={{ type: "spring", stiffness: 200, delay: 0.2 }}
                       >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-24 w-24 opacity-20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
                       </motion.div>
                       <h2 className="text-2xl font-bold mb-4">No Ledgers Found</h2>
-                  <p className="text-base-content/70 mb-8">Your poker journey begins with your first saved ledger.</p>
+                      <p className="text-base-content/70 mb-8">Your poker journey begins with your first saved ledger.</p>
                       <motion.button 
-                    onClick={() => setCurrentPage('ledger')} 
+                        onClick={() => setCurrentPage('ledger')} 
                         className="btn btn-primary btn-lg gap-2"
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
-                  >
-                    Create Your First Ledger
+                      >
+                        Create Your First Ledger
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
                         </svg>
                       </motion.button>
-                </div>
-              </div>
+                    </div>
+                  </div>
                 </motion.div>
               ) : (
                 <motion.div
@@ -739,18 +761,18 @@ const SavedLedgers = ({ setCurrentPage }) => {
                       </svg>
                       New Session
                     </motion.button>
-              </div>
+                  </div>
 
-              {/* Ledger Cards Grid */}
+                  {/* Ledger Cards Grid */}
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                     <AnimatePresence>
-                {ledgers.map((ledger) => {
-                  const totalProfit = calculateTotalProfit(ledger.players, ledger);
-                  const topPlayer = getPlayerWithHighestProfit(ledger.players, ledger);
-                  
-                  return (
+                      {ledgers.map((ledger) => {
+                        const totalProfit = calculateTotalProfit(ledger.players, ledger);
+                        const topPlayer = getPlayerWithHighestProfit(ledger.players, ledger);
+                        
+                        return (
                           <motion.div 
-                      key={ledger._id} 
+                            key={ledger._id} 
                             variants={cardVariants}
                             initial="hidden"
                             animate="visible"
@@ -758,21 +780,21 @@ const SavedLedgers = ({ setCurrentPage }) => {
                             whileTap="tap"
                             layoutId={ledger._id}
                             className="card bg-base-100/90 shadow-xl border border-base-200 overflow-hidden group cursor-pointer relative"
-                      onClick={() => handleViewLedger(ledger._id)}
-                    >
+                            onClick={() => handleViewLedger(ledger._id)}
+                          >
                             {/* Highlight gradient overlay on hover */}
                             <div className="absolute inset-0 bg-gradient-to-tr from-primary/0 via-primary/0 to-primary/0 group-hover:from-primary/5 group-hover:via-primary/5 group-hover:to-primary/10 transition-all duration-500"></div>
                             
                             {/* Delete Button */}
                             <motion.button 
                               className="absolute top-2 right-2 btn btn-circle btn-xs btn-ghost opacity-0 group-hover:opacity-100 transition-opacity z-10 bg-base-100/80"
-                        onClick={(e) => handleOpenDeleteModal(e, ledger)}
+                              onClick={(e) => handleOpenDeleteModal(e, ledger)}
                               whileHover={{ scale: 1.1, backgroundColor: 'rgb(239 68 68 / 0.2)' }}
                               whileTap={{ scale: 0.9 }}
-                      >
-                        <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-error" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
-                        </svg>
+                            >
+                              <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-error" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                              </svg>
                             </motion.button>
                             
                             <div className="card-body p-6 relative">
@@ -781,10 +803,10 @@ const SavedLedgers = ({ setCurrentPage }) => {
                                 initial={{ y: 0 }}
                                 whileHover={{ y: -2 }}
                               >
-                          <h3 className="card-title text-lg font-medium truncate" title={ledger.sessionName}>
-                            {ledger.sessionName}
-                          </h3>
-                          <div className="badge badge-ghost opacity-70">{formatDate(ledger.sessionDate)}</div>
+                                <h3 className="card-title text-lg font-medium truncate" title={ledger.sessionName}>
+                                  {ledger.sessionName}
+                                </h3>
+                                <div className="badge badge-ghost opacity-70">{formatDate(ledger.sessionDate)}</div>
                               </motion.div>
                               
                               <div className="grid grid-cols-2 gap-4 my-4">
@@ -793,7 +815,7 @@ const SavedLedgers = ({ setCurrentPage }) => {
                                   whileHover={{ scale: 1.02 }}
                                 >
                                   <div className="absolute inset-0 bg-primary/0 group-hover/stat:bg-primary/5 transition-colors duration-300"></div>
-                            <div className="stat-title text-xs opacity-70">Players</div>
+                                  <div className="stat-title text-xs opacity-70">Players</div>
                                   <div className="stat-value text-2xl relative z-10">{ledger.players?.length || 0}</div>
                                 </motion.div>
                                 <motion.div 
@@ -801,27 +823,27 @@ const SavedLedgers = ({ setCurrentPage }) => {
                                   whileHover={{ scale: 1.02 }}
                                 >
                                   <div className="absolute inset-0 bg-primary/0 group-hover/stat:bg-primary/5 transition-colors duration-300"></div>
-                            <div className="stat-title text-xs opacity-70">Transactions</div>
+                                  <div className="stat-title text-xs opacity-70">Transactions</div>
                                   <div className="stat-value text-2xl relative z-10">{ledger.transactions?.length || 0}</div>
                                 </motion.div>
-                        </div>
-                        
-                        {topPlayer && (
+                              </div>
+                              
+                              {topPlayer && (
                                 <motion.div 
                                   className="mt-4 pt-4 border-t border-base-300"
                                   initial={{ y: 0 }}
                                   whileHover={{ y: -2 }}
                                 >
-                            <div className="text-xs opacity-70 mb-1">Top Player</div>
-                            <div className="flex justify-between items-center">
-                              <span className="font-medium">{topPlayer.name}</span>
-                              <span className={`font-semibold ${(topPlayer.cashOut - topPlayer.buyIn) > 0 ? 'text-success' : 'text-error'}`}>
-                                ${formatLedgerMoney((topPlayer.cashOut - topPlayer.buyIn), ledger)}
-                              </span>
-                            </div>
+                                  <div className="text-xs opacity-70 mb-1">Top Player</div>
+                                  <div className="flex justify-between items-center">
+                                    <span className="font-medium">{topPlayer.name}</span>
+                                    <span className={`font-semibold ${(topPlayer.cashOut - topPlayer.buyIn) > 0 ? 'text-success' : 'text-error'}`}>
+                                      ${formatLedgerMoney((topPlayer.cashOut - topPlayer.buyIn), ledger)}
+                                    </span>
+                                  </div>
                                 </motion.div>
-                        )}
-                      </div>
+                              )}
+                            </div>
                             
                             <div className="card-actions justify-end bg-base-200/50 p-4 relative group-hover:bg-base-200/80 transition-colors duration-300">
                               <motion.button 
@@ -847,18 +869,18 @@ const SavedLedgers = ({ setCurrentPage }) => {
                                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
                                 </motion.svg>
                               </motion.button>
-                      </div>
+                            </div>
                           </motion.div>
-                  );
-                })}
+                        );
+                      })}
                     </AnimatePresence>
-              </div>
+                  </div>
                 </motion.div>
               )}
             </motion.div>
           )}
         </AnimatePresence>
-        </div>
+      </div>
 
       {/* Delete Confirmation Modal */}
       <AnimatePresence>
@@ -903,65 +925,6 @@ const SavedLedgers = ({ setCurrentPage }) => {
                       </>
                     ) : "Delete Ledger"}
                   </motion.button>
-            </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Share Modal */}
-      <AnimatePresence>
-        {isShareModalOpen && (
-          <motion.div 
-            className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-          >
-            <motion.div 
-              className="card bg-base-100 w-full max-w-md shadow-2xl"
-              initial={{ scale: 0.9, y: 20 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.9, y: 20 }}
-            >
-              <div className="card-body">
-                <h3 className="card-title text-xl">Share Ledger</h3>
-                <p className="text-sm text-base-content/70 mb-4">
-                  Copy the link below to share this ledger's results with others.
-                </p>
-                
-                <div className="form-control">
-                  <div className="input-group">
-                    <input 
-                      type="text" 
-                      value={shareUrl} 
-                      readOnly 
-                      className="input input-bordered w-full font-mono text-sm"
-                    />
-                    <motion.button 
-                      className="btn btn-primary" 
-                      onClick={handleCopyShareLink}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3" />
-                </svg>
-                      Copy
-                    </motion.button>
-            </div>
-          </div>
-
-                <div className="mt-6 flex justify-end">
-                  <motion.button 
-                    onClick={() => setIsShareModalOpen(false)} 
-                    className="btn btn-ghost"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                  >
-                    Close
-                  </motion.button>
                 </div>
               </div>
             </motion.div>
@@ -990,7 +953,7 @@ const SavedLedgers = ({ setCurrentPage }) => {
                   Select a player to track their performance in your bankroll.
                 </p>
                 
-                <div className="space-y-4">
+                <div className="space-y-4 max-h-[40vh] overflow-y-auto pr-2 scrollbar-thin scrollbar-thumb-base-300 scrollbar-track-base-100">
                   {selectedLedger?.players.map((player, index) => (
                     <motion.div
                       key={index}
@@ -1013,7 +976,7 @@ const SavedLedgers = ({ setCurrentPage }) => {
                   ))}
                 </div>
                 
-                <div className="mt-6 flex justify-end gap-2">
+                <div className="mt-6 flex justify-end gap-2 border-t pt-4">
                   <motion.button 
                     onClick={() => setIsTrackModalOpen(false)}
                     className="btn btn-ghost"
@@ -1040,7 +1003,7 @@ const SavedLedgers = ({ setCurrentPage }) => {
               </div>
             </motion.div>
           </motion.div>
-          )}
+        )}
       </AnimatePresence>
     </div>
   );
