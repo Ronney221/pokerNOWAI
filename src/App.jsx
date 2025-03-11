@@ -15,6 +15,8 @@ import Bankroll from './Bankroll';
 import Features from './Features';
 import Home from './Home';
 import Payment from './Payment';
+import StripeCheckout from './StripeCheckout';
+import StripeReturn from './StripeReturn';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import './App.css';
@@ -88,7 +90,7 @@ function App() {
       content = <Register setCurrentPage={setCurrentPage} />;
       break;
     case "analytics":
-      content = <Analytics />;
+      content = <Analytics setCurrentPage={setCurrentPage} />;
       break;
     case "ledger":
       content = <Ledger setCurrentPage={setCurrentPage} />;
@@ -110,6 +112,12 @@ function App() {
       break;
     case "payment":
       content = <Payment handlePageChange={setCurrentPage} />;
+      break;
+    case "checkout":
+      content = <StripeCheckout handlePageChange={setCurrentPage} />;
+      break;
+    case "payment-return":
+      content = <StripeReturn handlePageChange={setCurrentPage} />;
       break;
     case "login":
       content = <Login setCurrentPage={setCurrentPage} />;

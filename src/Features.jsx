@@ -14,7 +14,8 @@ import {
   ChartBarIcon,
   UserGroupIcon,
   LightBulbIcon,
-  ShieldCheckIcon
+  ShieldCheckIcon,
+  RocketLaunchIcon
 } from '@heroicons/react/24/outline';
 import './index.css';
 
@@ -159,25 +160,25 @@ const PlanCard = ({ plan, price, features, isPremium, onSelect }) => (
 );
 
 const CoreFeatureCard = ({ icon: Icon, title, steps, description }) => (
-  <motion.div 
+    <motion.div
     variants={fadeInUp}
-    whileHover={{
-      y: -8,
+      whileHover={{ 
+        y: -8,
       scale: 1.02,
       boxShadow: "0 20px 40px rgba(0,0,0,0.1)",
       transition: { duration: 0.3, ease: "easeOut" }
-    }}
+      }}
     transition={{ duration: 0.3 }}
     className="group bg-base-100/60 backdrop-blur-sm p-8 rounded-xl border border-base-200 shadow-lg hover:shadow-2xl hover:border-primary/20 transition-all duration-300"
-  >
-    <div className="flex items-center gap-4 mb-6">
+    >
+        <div className="flex items-center gap-4 mb-6">
       <div className="p-4 rounded-xl bg-primary/10 group-hover:bg-primary/20 transition-colors duration-300">
         <Icon className="h-7 w-7 text-primary" />
-      </div>
+          </div>
       <h3 className="text-2xl font-bold bg-gradient-to-r from-base-content to-base-content/70 bg-clip-text text-transparent">
         {title}
       </h3>
-    </div>
+        </div>
     <p className="text-base text-base-content/70 mb-8 leading-relaxed">{description}</p>
     {steps && (
       <motion.div 
@@ -426,14 +427,31 @@ const FlipCard = () => {
         >
           ↔
         </motion.div>
-      </motion.div>
+    </motion.div>
     </div>
   );
 };
 
+const StatCard = ({ icon: Icon, value, label, gradient }) => (
+  <motion.div
+    variants={fadeInUp}
+    className="p-6 bg-base-100/40 rounded-xl"
+  >
+    <div className="flex items-center gap-4">
+      <div className="p-2 rounded-lg bg-primary/10">
+        <Icon className="h-5 w-5 text-primary" />
+      </div>
+      <div>
+        <h3 className="text-4xl font-bold mb-2">{value}</h3>
+        <p className="text-base-content/70">{label}</p>
+      </div>
+    </div>
+  </motion.div>
+);
+
 const Features = ({ handlePageChange }) => {
   const { currentUser } = useAuth();
-  
+
   const handleStartAnalysis = () => {
     if (currentUser) {
       handlePageChange('fullLogUpload');
@@ -535,13 +553,13 @@ const Features = ({ handlePageChange }) => {
         </motion.div>
       </div>
 
-      <motion.div 
+    <motion.div
         initial="initial"
         animate="animate"
         className="max-w-7xl mx-auto relative z-10"
-      >
-        {/* Hero Section */}
-        <motion.div 
+    >
+      {/* Hero Section */}
+          <motion.div
           variants={fadeInUp}
           className="text-center mb-16"
         >
@@ -555,19 +573,19 @@ const Features = ({ handlePageChange }) => {
               Free Poker Analytics for Everyone
             </motion.span>
           </div>
-          <motion.h1
+            <motion.h1
             className="text-5xl md:text-6xl font-bold mb-6 bg-gradient-to-r from-base-content via-base-content to-base-content/70 bg-clip-text text-transparent"
           >
             Turn Your Poker Game Into a 
             <span className="text-primary"> Winning Strategy</span>
-          </motion.h1>
+            </motion.h1>
           <p className="text-xl md:text-2xl text-base-content/70 max-w-3xl mx-auto leading-relaxed mb-8">
             Analyze your play, track your progress, and improve your game with AI-powered insights
           </p>
           <motion.button
             variants={glowAnimation}
             animate="animate"
-            className="btn btn-primary btn-lg group relative overflow-hidden"
+                className="btn btn-primary btn-lg group relative overflow-hidden"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={handleStartAnalysis}
@@ -575,31 +593,49 @@ const Features = ({ handlePageChange }) => {
             <span className="relative z-10">Start Free Analysis</span>
             <ArrowRightIcon className="h-5 w-5 ml-2 relative z-10 group-hover:translate-x-1 transition-transform" />
           </motion.button>
+              <button 
+            onClick={() => {
+              handlePageChange('payment');
+              window.scrollTo({ top: 0, behavior: 'smooth' });
+            }}
+            className="btn btn-outline btn-lg ml-4 group"
+          >
+            View Pricing Plans
+                <ArrowRightIcon className="h-4 w-4 ml-2 transform group-hover:translate-x-1 transition-transform duration-300" />
+              </button>
           <p className="text-sm text-base-content/70 mt-4">
             No credit card required • Instant access • Free forever plan
           </p>
-        </motion.div>
+            </motion.div>
 
         {/* Social Proof Section - NEW */}
-        <motion.div 
+          <motion.div
           variants={fadeInUp}
           className="text-center mb-32"
-        >
-          <div className="grid grid-cols-3 gap-8 mb-8">
-            <div className="p-6 bg-base-100/40 rounded-xl">
-              <h3 className="text-4xl font-bold text-primary mb-2">10,000+</h3>
-              <p className="text-base-content/70">Games Analyzed</p>
-            </div>
-            <div className="p-6 bg-base-100/40 rounded-xl">
-              <h3 className="text-4xl font-bold text-primary mb-2">5,000+</h3>
-              <p className="text-base-content/70">Active Players</p>
-            </div>
-            <div className="p-6 bg-base-100/40 rounded-xl">
-              <h3 className="text-4xl font-bold text-primary mb-2">95%</h3>
-              <p className="text-base-content/70">Win Rate Improvement</p>
-            </div>
+          >
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <StatCard
+              icon={SparklesIcon}
+              value="10K+"
+              label="Hands Analyzed Daily"
+            />
+            <StatCard
+              icon={UserGroupIcon}
+              value="100+"
+              label="Active Players"
+            />
+            <StatCard
+              icon={ShieldCheckIcon}
+              value="600K+"
+              label="CSV Lines Processed"
+            />
+            <StatCard
+              icon={RocketLaunchIcon}
+              value="2ms"
+              label="Processing Time"
+            />
           </div>
-        </motion.div>
+          </motion.div>
 
         {/* Interactive Demo Section - Move up for immediate engagement */}
         <motion.div 
@@ -613,7 +649,7 @@ const Features = ({ handlePageChange }) => {
             >
               See Your Game Through AI's Eyes
             </motion.h2>
-          </div>
+        </div>
           <motion.div
             variants={fadeInUp}
             className="relative bg-base-100/60 backdrop-blur-xl rounded-2xl border border-base-200 p-8 mb-16"
@@ -633,13 +669,13 @@ const Features = ({ handlePageChange }) => {
           className="mb-32"
         >
           <div className="text-center mb-16">
-            <motion.h2 
+            <motion.h2
               variants={fadeInUp}
               className="text-3xl font-bold mb-4"
             >
               Everything You Need to Start
             </motion.h2>
-            <motion.p 
+            <motion.p
               variants={fadeInUp}
               className="text-xl text-base-content/70"
             >
@@ -651,7 +687,7 @@ const Features = ({ handlePageChange }) => {
               <CoreFeatureCard key={index} {...feature} />
             ))}
           </div>
-        </motion.div>
+          </motion.div>
 
         {/* Premium Features Section */}
         <motion.div 
@@ -659,22 +695,22 @@ const Features = ({ handlePageChange }) => {
           className="mb-32"
         >
           <div className="text-center mb-16">
-            <motion.div
+          <motion.div
               initial={{ opacity: 0, scale: 0.5 }}
               whileInView={{ opacity: 1, scale: 1 }}
               className="inline-block mb-6"
-            >
+          >
               <span className="px-4 py-2 rounded-full bg-primary/10 text-primary text-sm font-medium">
                 Premium Features
               </span>
             </motion.div>
-            <motion.h2 
+            <motion.h2
               variants={fadeInUp}
               className="text-3xl font-bold mb-4"
             >
               Unlock Your Full Potential
             </motion.h2>
-            <motion.p 
+            <motion.p
               variants={fadeInUp}
               className="text-xl text-base-content/70 max-w-2xl mx-auto"
             >
@@ -762,10 +798,10 @@ const Features = ({ handlePageChange }) => {
           <p className="text-xl text-base-content/70 mb-8 max-w-2xl mx-auto">
             Join thousands of players who have already enhanced their poker strategy with our AI-powered analytics
           </p>
-          <motion.button
+            <motion.button
             variants={glowAnimation}
             animate="animate"
-            className="btn btn-primary btn-lg group relative overflow-hidden"
+              className="btn btn-primary btn-lg group relative overflow-hidden"
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             onClick={() => {
@@ -781,7 +817,7 @@ const Features = ({ handlePageChange }) => {
               transition={{ duration: 0.3 }}
             />
             <ArrowRightIcon className="h-5 w-5 ml-2 relative z-10 group-hover:translate-x-1 transition-transform" />
-          </motion.button>
+            </motion.button>
           <p className="text-sm text-base-content/70 mt-4">
             No credit card required • 14-day free trial • Cancel anytime
           </p>
@@ -824,8 +860,8 @@ const Features = ({ handlePageChange }) => {
         }}
       >
         {/* Wrap PremiumFeatureCard components */}
-      </motion.div>
-    </div>
+          </motion.div>
+        </div>
   );
 };
 
