@@ -4,6 +4,7 @@ import { CheckIcon, SparklesIcon } from '@heroicons/react/24/outline';
 import { useAuth } from './contexts/AuthContext';
 import { loadStripe } from '@stripe/stripe-js';
 import { toast } from 'react-toastify';
+import { API_URL } from './config/api';
 
 // Initialize Stripe
 const stripePromise = loadStripe(import.meta.env.VITE_STRIPE_PUBLIC_KEY);
@@ -94,7 +95,7 @@ const Payment = ({ handlePageChange }) => {
       if (!currentUser) return;
       
       try {
-        const response = await fetch(`http://localhost:5000/api/users/${currentUser.uid}/status`);
+        const response = await fetch(`${API_URL}/users/${currentUser.uid}/status`);
         const data = await response.json();
         setUserStatus(data);
       } catch (error) {
@@ -174,7 +175,7 @@ const Payment = ({ handlePageChange }) => {
 
     try {
       setIsLoading(true);
-      const response = await fetch('http://localhost:5000/api/users/start-trial', {
+      const response = await fetch(`${API_URL}/users/start-trial`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
