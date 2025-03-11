@@ -8,8 +8,20 @@ import { useAuth } from './contexts/AuthContext';
 import { toast } from 'react-toastify';
 import { API_URL, APP_URL } from './config/api';
 
+// Debug logging function
+const debugLog = (message, data) => {
+  console.log(`[StripeCheckout Debug] ${message}:`, data);
+};
+
 // Initialize Stripe outside component
 const STRIPE_PUBLIC_KEY = import.meta.env.VITE_STRIPE_PUBLIC_KEY;
+
+debugLog('Environment Config', {
+  NODE_ENV: process.env.NODE_ENV,
+  API_URL,
+  APP_URL,
+  stripeKeyPresent: !!STRIPE_PUBLIC_KEY
+});
 
 if (!STRIPE_PUBLIC_KEY) {
   console.error('Missing Stripe public key! Make sure VITE_STRIPE_PUBLIC_KEY is set in your .env file');
@@ -37,18 +49,24 @@ const StripeCheckout = ({ handlePageChange }) => {
           throw new Error('Price ID is not configured in environment variables.');
         }
 
-        console.log('Creating checkout session with:', {
+        debugLog('Starting checkout session creation', {
           priceId,
           userId: currentUser.uid,
           email: currentUser.email,
-          stripePublicKey: STRIPE_PUBLIC_KEY ? 'present' : 'missing'
+          stripePublicKey: STRIPE_PUBLIC_KEY ? 'present' : 'missing',
+          displayName: currentUser.displayName,
+          origin: window.location.origin
         });
 
         // Get Firebase ID token
         const idToken = await currentUser.getIdToken();
+        debugLog('Got Firebase ID token', { tokenLength: idToken.length });
+
+        const requestUrl = `${API_URL}/create-checkout-session`;
+        debugLog('Making request to', { url: requestUrl });
 
         // Create checkout session
-        const response = await fetch(`${API_URL}/create-checkout-session`, {
+        const response = await fetch(requestUrl, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -66,30 +84,48 @@ const StripeCheckout = ({ handlePageChange }) => {
           }),
         });
 
+        debugLog('Got response', {
+          status: response.status,
+          statusText: response.statusText,
+          headers: Object.fromEntries(response.headers.entries())
+        });
+
         let data;
         const responseText = await response.text();
+        debugLog('Response text', responseText);
+
         try {
           data = JSON.parse(responseText);
+          debugLog('Parsed response data', data);
         } catch (e) {
           console.error('Failed to parse server response:', responseText);
           throw new Error('Invalid server response format');
         }
 
         if (!response.ok) {
-          console.error('Server error response:', data);
+          debugLog('Server error response', data);
           throw new Error(data.error || data.message || 'Server error: ' + response.status);
         }
 
         if (!data.clientSecret) {
-          console.error('Missing client secret in response:', data);
+          debugLog('Missing client secret in response', data);
           throw new Error('Invalid response: missing client secret');
         }
 
-        console.log('Checkout session created successfully');
+        debugLog('Checkout session created successfully', {
+          sessionId: data.sessionId,
+          hasClientSecret: !!data.clientSecret
+        });
+
         setClientSecret(data.clientSecret);
         setSessionId(data.sessionId);
       } catch (err) {
         console.error('Checkout error:', err);
+        debugLog('Checkout error details', {
+          message: err.message,
+          stack: err.stack,
+          name: err.name
+        });
         setError(err.message);
         toast.error('Failed to initialize checkout. Please try again.');
       } finally {

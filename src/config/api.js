@@ -12,6 +12,11 @@ export const PYTHON_API_URL = isProd
   ? process.env.REACT_APP_PYTHON_API_URL || 'https://yourusername.pythonanywhere.com'
   : 'http://localhost:5000'; // Use local Flask server in development
 
+// Debug logging function
+const debugLog = (message, data) => {
+  console.log(`[API Config Debug] ${message}:`, data);
+};
+
 // In production, use relative path for API to handle both domain and subdomain access
 export const APP_URL = isProd
   ? 'https://www.pokernowai.com'
@@ -24,11 +29,14 @@ export const API_URL = isProd
 // Firebase redirect URLs
 export const FIREBASE_REDIRECT_URL = `${APP_URL}/verify-email`;
 
-// Debug log
-console.log('API Configuration:', {
-  environment: process.env.NODE_ENV,
-  apiUrl: API_URL,
-  appUrl: APP_URL
+// Debug log configuration
+debugLog('Environment Configuration', {
+  NODE_ENV: process.env.NODE_ENV,
+  isProd,
+  APP_URL,
+  API_URL,
+  currentOrigin: typeof window !== 'undefined' ? window.location.origin : 'SSR',
+  currentHostname: typeof window !== 'undefined' ? window.location.hostname : 'SSR'
 });
 
 // Export configuration object
