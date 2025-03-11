@@ -60,10 +60,10 @@ const PlayerPerformanceSchema = new Schema({
   timestamps: true
 });
 
-// Indexes for faster queries
-PlayerPerformanceSchema.index({ firebaseUid: 1 });
-PlayerPerformanceSchema.index({ createdAt: -1 });
-PlayerPerformanceSchema.index({ sessionDate: -1 });
+// Optimized indexes for common queries
+PlayerPerformanceSchema.index({ firebaseUid: 1, sessionDate: -1 }); // Combined index for user's performance history
+PlayerPerformanceSchema.index({ createdAt: -1 }); // For sorting by creation date
+PlayerPerformanceSchema.index({ sessionDate: -1 }); // For sorting by session date
 
 // Static method to find performances by firebase user ID
 PlayerPerformanceSchema.statics.findByFirebaseUid = function(firebaseUid) {

@@ -14,8 +14,7 @@ const mongoose = require('mongoose');
 const pokerLogSchema = new mongoose.Schema({
   userId: {
     type: String,
-    required: true,
-    index: true
+    required: true
   },
   fileName: {
     type: String,
@@ -56,6 +55,25 @@ const pokerLogSchema = new mongoose.Schema({
   }
 });
 
+// Optimized indexes with documentation
+pokerLogSchema.index({ 
+  userId: 1, 
+  uploadDate: -1 
+}, {
+  name: 'user_upload_history',
+  background: true,
+  description: 'Supports queries for user\'s upload history, sorted by date'
+});
+
+pokerLogSchema.index({ 
+  processed: 1, 
+  uploadDate: 1 
+}, {
+  name: 'processing_queue',
+  background: true,
+  description: 'Supports queries for unprocessed logs in upload order'
+});
+
 // Instance methods
 pokerLogSchema.methods.addError = function(errorMessage) {
   this.processingErrors.push({
@@ -78,10 +96,6 @@ pokerLogSchema.statics.findByUserId = function(userId) {
 pokerLogSchema.statics.findUnprocessed = function() {
   return this.find({ processed: false }).sort({ uploadDate: 1 });
 };
-
-// Indexes
-pokerLogSchema.index({ userId: 1, uploadDate: -1 });
-pokerLogSchema.index({ processed: 1, uploadDate: 1 });
 
 const PokerLog = mongoose.model('PokerLog', pokerLogSchema);
 module.exports = PokerLog; 

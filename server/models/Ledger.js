@@ -46,8 +46,7 @@ const LedgerSchema = new Schema({
   },
   firebaseUid: {
     type: String,
-    required: true,
-    index: true
+    required: true
   },
   sessionName: {
     type: String,
@@ -89,9 +88,32 @@ const LedgerSchema = new Schema({
   timestamps: true
 });
 
-// Indexes for faster queries
-LedgerSchema.index({ firebaseUid: 1, sessionDate: -1 });
-LedgerSchema.index({ createdAt: -1 });
+// Optimized indexes with documentation
+LedgerSchema.index({ 
+  firebaseUid: 1, 
+  sessionDate: -1 
+}, {
+  name: 'user_session_history',
+  background: true,
+  description: 'Supports queries for user\'s ledger history, sorted by session date'
+});
+
+LedgerSchema.index({ 
+  shareCode: 1 
+}, {
+  name: 'shared_ledger_lookup',
+  sparse: true,
+  background: true,
+  description: 'Supports lookups of shared ledgers by their share code'
+});
+
+LedgerSchema.index({ 
+  createdAt: -1 
+}, {
+  name: 'creation_date',
+  background: true,
+  description: 'Supports queries sorted by creation date'
+});
 
 // Static method to find ledgers by firebase user ID
 LedgerSchema.statics.findByFirebaseUid = function(firebaseUid) {
