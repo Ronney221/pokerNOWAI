@@ -8,32 +8,11 @@ import {
 import { useAuth } from './contexts/AuthContext';
 import { toast } from 'react-toastify';
 import { format, parseISO, isValid } from 'date-fns';
-import { Line } from 'react-chartjs-2';
-import {
-  Chart as ChartJS,
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler
-} from 'chart.js';
 import { motion, AnimatePresence } from 'framer-motion';
 import { pageTransitionVariants, containerVariants, itemVariants } from './animations/pageTransitions';
-
-// Register Chart.js components
-ChartJS.register(
-  CategoryScale,
-  LinearScale,
-  PointElement,
-  LineElement,
-  Title,
-  Tooltip,
-  Legend,
-  Filler
-);
+import Dashboard from './components/Dashboard';
+import ReactDOM from 'react-dom';
+import './index.css';
 
 /**
  * Bankroll component that displays player performance data with CRUD functionality
@@ -130,88 +109,72 @@ const Bankroll = () => {
   const calculateStats = () => {
     if (!performanceData || performanceData.length === 0) {
       return {
-        biggestWin: null,
-        biggestLoss: null,
         winningStreak: [],
-        losingStreak: []
+        losingStreak: [],
+        biggestWin: null,
+        biggestLoss: null
       };
     }
 
-    // Sort sessions by date
-    const sortedSessions = [...performanceData].sort(
-      (a, b) => new Date(a.sessionDate) - new Date(b.sessionDate)
-    );
-
-    // Find biggest win and loss
-    let biggestWin = sortedSessions.reduce(
-      (max, session) => (!max || session.profit > max.profit) ? session : max, 
-      null
-    );
-    
-    let biggestLoss = sortedSessions.reduce(
-      (min, session) => (!min || session.profit < min.profit) ? session : min, 
-      null
-    );
-
-    // If all sessions are wins or all are losses, handle appropriately
-    if (biggestLoss && biggestLoss.profit >= 0) biggestLoss = null;
-    if (biggestWin && biggestWin.profit <= 0) biggestWin = null;
-
-    // Calculate winning and losing streaks
     let currentWinStreak = [];
-    let currentLossStreak = [];
+    let currentLoseStreak = [];
     let longestWinStreak = [];
-    let longestLossStreak = [];
+    let longestLoseStreak = [];
+    let biggestWin = null;
+    let biggestLoss = null;
 
-    // Find streaks
-    for (const session of sortedSessions) {
-      // If this is a winning session
+    // Sort sessions by date
+    const sortedSessions = [...performanceData].sort((a, b) => 
+      new Date(a.sessionDate) - new Date(b.sessionDate)
+    );
+
+    // Calculate streaks and biggest wins/losses
+    sortedSessions.forEach(session => {
+      // Update biggest win/loss
+      if (!biggestWin || session.profit > biggestWin.profit) {
+        biggestWin = session;
+      }
+      if (!biggestLoss || session.profit < biggestLoss.profit) {
+        biggestLoss = session;
+      }
+
+      // Calculate streaks
       if (session.profit > 0) {
-        // Add to current win streak
-        currentWinStreak.push(session);
-        // If we had a loss streak, check if it's the longest
-        if (currentLossStreak.length > longestLossStreak.length) {
-          longestLossStreak = [...currentLossStreak];
+        if (currentLoseStreak.length > longestLoseStreak.length) {
+          longestLoseStreak = [...currentLoseStreak];
         }
-        // Reset loss streak
-        currentLossStreak = [];
-      } 
-      // If this is a losing session
-      else if (session.profit < 0) {
-        // Add to current loss streak
-        currentLossStreak.push(session);
-        // If we had a win streak, check if it's the longest
+        currentLoseStreak = [];
+        currentWinStreak.push(session);
+      } else if (session.profit < 0) {
         if (currentWinStreak.length > longestWinStreak.length) {
           longestWinStreak = [...currentWinStreak];
         }
-        // Reset win streak
         currentWinStreak = [];
+        currentLoseStreak.push(session);
       }
-      // If profit is exactly 0, don't affect streaks
-    }
+    });
 
     // Check final streaks
     if (currentWinStreak.length > longestWinStreak.length) {
-      longestWinStreak = [...currentWinStreak];
+      longestWinStreak = currentWinStreak;
     }
-    if (currentLossStreak.length > longestLossStreak.length) {
-      longestLossStreak = [...currentLossStreak];
+    if (currentLoseStreak.length > longestLoseStreak.length) {
+      longestLoseStreak = currentLoseStreak;
     }
 
     return {
-      biggestWin,
-      biggestLoss,
       winningStreak: longestWinStreak,
-      losingStreak: longestLossStreak
+      losingStreak: longestLoseStreak,
+      biggestWin,
+      biggestLoss
     };
   };
 
   /**
    * Calculate total profit for a streak
    */
-  const calculateStreakProfit = (streak) => {
-    if (!streak || streak.length === 0) return 0;
-    return streak.reduce((sum, session) => sum + session.profit, 0);
+  const calculateStreakProfit = (sessions) => {
+    return sessions.reduce((total, session) => total + session.profit, 0);
   };
 
   /**
@@ -636,164 +599,7 @@ const Bankroll = () => {
       );
     }
 
-    const chartData = prepareChartData();
-    const stats = calculateStats();
-    
-    return (
-      <div className="mb-8">
-        <div className="mb-8 p-6 bg-base-200 rounded-lg">
-          <h3 className="text-xl font-bold mb-4">Performance Over Time</h3>
-          <div className="h-64 md:h-80">
-            <Line
-              data={{
-                labels: chartData.labels,
-                datasets: [
-                  {
-                    label: 'Profit/Loss ($)',
-                    data: chartData.data,
-                    borderColor: chartData.borderColor,
-                    backgroundColor: 'rgba(54, 162, 235, 0.2)',
-                    borderWidth: 2,
-                    pointBackgroundColor: chartData.backgroundColor,
-                    pointRadius: 4,
-                    pointHoverRadius: 6,
-                    tension: 0.3,
-                    fill: true
-                  }
-                ]
-              }}
-              options={{
-                maintainAspectRatio: false,
-                responsive: true,
-                plugins: {
-                  tooltip: {
-                    callbacks: {
-                      label: (context) => {
-                        const runningTotal = chartData.runningTotals[context.dataIndex];
-                        return [
-                          `Session: ${runningTotal.sessionName}`,
-                          `Profit: $${formatMoney(runningTotal.profit)}`,
-                          `Total: $${formatMoney(runningTotal.runningTotal)}`
-                        ];
-                      }
-                    }
-                  },
-                  legend: {
-                    display: false
-                  }
-                },
-                scales: {
-                  y: {
-                    grid: {
-                      color: 'rgba(200, 200, 200, 0.2)'
-                    },
-                    ticks: {
-                      callback: (value) => `$${value.toFixed(2)}`
-                    }
-                  },
-                  x: {
-                    grid: {
-                      display: false
-                    }
-                  }
-                }
-              }}
-            />
-          </div>
-        </div>
-        
-        {/* Performance Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Best and Worst Session */}
-          <div className="bg-base-200 p-6 rounded-lg">
-            <h3 className="text-xl font-bold mb-4">Best & Worst Sessions</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <h4 className="font-semibold text-success mb-2">Biggest Win</h4>
-                {stats.biggestWin ? (
-                  <div className="p-3 bg-base-300 rounded-lg">
-                    <p className="font-bold text-success">
-                      ${formatMoney(stats.biggestWin.profit)}
-                    </p>
-                    <p className="text-sm mt-1">
-                      {stats.biggestWin.sessionName || 'Unnamed Game'}
-                    </p>
-                    <p className="text-xs opacity-70 mt-1">
-                      {formatDate(stats.biggestWin.sessionDate)}
-                    </p>
-                  </div>
-                ) : (
-                  <p className="text-sm opacity-70">No winning sessions yet</p>
-                )}
-              </div>
-              
-              <div>
-                <h4 className="font-semibold text-error mb-2">Biggest Loss</h4>
-                {stats.biggestLoss ? (
-                  <div className="p-3 bg-base-300 rounded-lg">
-                    <p className="font-bold text-error">
-                      ${formatMoney(stats.biggestLoss.profit)}
-                    </p>
-                    <p className="text-sm mt-1">
-                      {stats.biggestLoss.sessionName || 'Unnamed Game'}
-                    </p>
-                    <p className="text-xs opacity-70 mt-1">
-                      {formatDate(stats.biggestLoss.sessionDate)}
-                    </p>
-                  </div>
-                ) : (
-                  <p className="text-sm opacity-70">No losing sessions yet</p>
-                )}
-              </div>
-            </div>
-          </div>
-          
-          {/* Winning and Losing Streaks */}
-          <div className="bg-base-200 p-6 rounded-lg">
-            <h3 className="text-xl font-bold mb-4">Longest Streaks</h3>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <h4 className="font-semibold text-success mb-2">Winning Streak</h4>
-                {stats.winningStreak.length > 0 ? (
-                  <div className="p-3 bg-base-300 rounded-lg">
-                    <p className="font-bold">
-                      {stats.winningStreak.length} session{stats.winningStreak.length !== 1 ? 's' : ''}
-                    </p>
-                    <p className="text-success font-semibold mt-1">
-                      Total: ${formatMoney(calculateStreakProfit(stats.winningStreak))}
-                    </p>
-                    <p className="text-xs opacity-70 mt-1">
-                      {formatDate(stats.winningStreak[0].sessionDate)} - {formatDate(stats.winningStreak[stats.winningStreak.length - 1].sessionDate)}
-                    </p>
-                  </div>
-                ) : (
-                  <p className="text-sm opacity-70">No winning streaks yet</p>
-                )}
-              </div>
-              
-              <div>
-                <h4 className="font-semibold text-error mb-2">Losing Streak</h4>
-                {stats.losingStreak.length > 0 ? (
-                  <div className="p-3 bg-base-300 rounded-lg">
-                    <p className="font-bold">
-                      {stats.losingStreak.length} session{stats.losingStreak.length !== 1 ? 's' : ''}
-                    </p>
-                    <p className="text-error font-semibold mt-1">
-                      Total: ${formatMoney(calculateStreakProfit(stats.losingStreak))}
-                    </p>
-                    <p className="text-xs opacity-70 mt-1">
-                      {formatDate(stats.losingStreak[0].sessionDate)} - {formatDate(stats.losingStreak[stats.losingStreak.length - 1].sessionDate)}
-                    </p>
-                  </div>
-                ) : (
-                  <p className="text-sm opacity-70">No losing streaks yet</p>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    );
+    return <Dashboard performanceData={performanceData} />;
   };
 
   /**
@@ -874,313 +680,580 @@ const Bankroll = () => {
         <div className="absolute top-1/2 left-1/3 w-64 h-64 bg-accent/5 rounded-full blur-3xl opacity-50"></div>
       </div>
 
-      <div className="container mx-auto px-4 pt-32 pb-20 relative z-10">
+      <div className="container mx-auto px-4 pt-32 pb-32 relative z-10">
         <motion.div
           variants={containerVariants}
           initial="hidden"
           animate="visible"
         >
-          <div className="flex justify-between items-center mb-6">
-            <motion.h2 
-              variants={itemVariants}
-              className="text-2xl font-bold"
-            >
-              Your Poker Performance
-            </motion.h2>
+          {/* Hero Section with Stats */}
+          <div className="mb-12">
             <motion.div 
-              variants={itemVariants}
-              className="flex gap-2"
+              className="text-center mb-8"
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
             >
-              <button 
-                className="btn btn-primary"
-                onClick={handleOpenAddModal}
+              <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                Your Poker Journey
+              </h1>
+              <p className="text-lg opacity-80 max-w-2xl mx-auto">
+                Track your progress, analyze your performance, and improve your game.
+              </p>
+            </motion.div>
+
+            {/* Stats Cards */}
+            <motion.div 
+              variants={containerVariants}
+              className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
+            >
+              <motion.div 
+                variants={itemVariants} 
+                className="card bg-base-100/90 shadow-xl backdrop-blur-sm border border-base-200 hover:border-primary/50 transition-all duration-300"
+                whileHover={{ y: -5 }}
               >
-                Add Session
-              </button>
-              {performanceData.length > 0 && (
-                <button 
-                  className={`btn ${isGlobalEditMode ? 'btn-secondary' : 'btn-accent'}`}
-                  onClick={() => {
-                    setIsGlobalEditMode(!isGlobalEditMode);
-                    if (isGlobalEditMode) {
-                      setEditingRow(null);
-                      setEditFormData({});
-                    }
-                  }}
-                >
-                  {isGlobalEditMode ? 'Save Changes' : 'Edit Sessions'}
-                </button>
-              )}
+                <div className="card-body">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium opacity-70">Total Buy-in</h3>
+                      <p className="text-2xl font-bold">${formatMoney(calculateTotalBuyIn())}</p>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+              
+              <motion.div 
+                variants={itemVariants} 
+                className="card bg-base-100/90 shadow-xl backdrop-blur-sm border border-base-200 hover:border-secondary/50 transition-all duration-300"
+                whileHover={{ y: -5 }}
+              >
+                <div className="card-body">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium opacity-70">Total Cash-out</h3>
+                      <p className="text-2xl font-bold">${formatMoney(calculateTotalCashOut())}</p>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+              
+              <motion.div 
+                variants={itemVariants} 
+                className="card bg-base-100/90 shadow-xl backdrop-blur-sm border border-base-200 hover:border-accent/50 transition-all duration-300"
+                whileHover={{ y: -5 }}
+              >
+                <div className="card-body">
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                      </svg>
+                    </div>
+                    <div>
+                      <h3 className="text-sm font-medium opacity-70">Total Profit/Loss</h3>
+                      <p className={`text-2xl font-bold ${calculateTotalProfit() >= 0 ? 'text-success' : 'text-error'}`}>
+                        ${formatMoney(calculateTotalProfit())}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
             </motion.div>
           </div>
-          
-          {/* Summary Cards */}
-          <motion.div 
-            variants={containerVariants}
-            className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
-          >
-            <motion.div variants={itemVariants} className="card bg-base-200 shadow-xl">
-              <div className="card-body">
-                <h3 className="card-title">Total Buy-in</h3>
-                <p className="text-3xl font-bold">${formatMoney(calculateTotalBuyIn())}</p>
-              </div>
-            </motion.div>
-            
-            <motion.div variants={itemVariants} className="card bg-base-200 shadow-xl">
-              <div className="card-body">
-                <h3 className="card-title">Total Cash-out</h3>
-                <p className="text-3xl font-bold">${formatMoney(calculateTotalCashOut())}</p>
-              </div>
-            </motion.div>
-            
-            <motion.div variants={itemVariants} className="card bg-base-200 shadow-xl">
-              <div className="card-body">
-                <h3 className="card-title">Total Profit/Loss</h3>
-                <p className={`text-3xl font-bold ${calculateTotalProfit() >= 0 ? 'text-success' : 'text-error'}`}>
-                  ${formatMoney(calculateTotalProfit())}
-                </p>
-              </div>
-            </motion.div>
-          </motion.div>
-          
-          {/* No Performance Data Yet */}
-          {performanceData.length === 0 && (
-            <div className="text-center p-8 mb-8 bg-base-200 rounded-lg">
-              <h3 className="text-xl font-bold mb-4">No Performance Data Yet</h3>
-              <p className="mb-4">Track your performance from the Saved Ledgers page or add a new session manually.</p>
-              <button 
-                className="btn btn-primary"
+
+          {/* Main Action Buttons Section */}
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 mb-8">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {/* Add Session */}
+              <motion.button
                 onClick={handleOpenAddModal}
+                className="group relative flex flex-col items-center gap-4 p-6 rounded-2xl bg-primary/10 hover:bg-primary/20 transition-all duration-300"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
               >
-                Add Your First Session
-              </button>
-            </div>
-          )}
-          
-          {/* Performance Table */}
-          {performanceData.length > 0 && (
-            <div className="card bg-base-100 shadow-xl mb-8">
-              <div className="card-body">
-                <h3 className="card-title mb-4">Session History</h3>
-                {/* Edit Mode Instruction */}
-                {isGlobalEditMode && !editingRow && (
-                  <div className="alert alert-info mb-4">
-                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                    <span>Select a session to edit by clicking on its row.</span>
-                  </div>
-                )}
-                <div className="overflow-x-auto">
-                  <table className="table w-full">
-                    <thead>
-                      <tr>
-                        {isGlobalEditMode && (
-                          <th>
-                            <label>
-                              <input
-                                type="checkbox"
-                                className="checkbox"
-                                checked={selectedSessions.length === performanceData.length}
-                                onChange={(e) => {
-                                  if (e.target.checked) {
-                                    // Select all
-                                    setSelectedSessions(performanceData.map(item => item._id));
-                                  } else {
-                                    // Deselect all
-                                    setSelectedSessions([]);
-                                  }
-                                }}
-                              />
-                            </label>
-                          </th>
-                        )}
-                        <th>Date</th>
-                        <th>Session</th>
-                        <th>Player</th>
-                        <th>Buy-in</th>
-                        <th>Cash-out</th>
-                        <th>Profit/Loss</th>
-                        {/* Only show actions column when in edit mode */}
-                        {isGlobalEditMode && <th>Actions</th>}
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {editingRow ? (
-                        // Editing row UI
-                        <tr>
-                          {isGlobalEditMode && <td></td>}
-                          <td>
-                            <input
-                              type="date"
-                              name="sessionDate"
-                              value={editFormData.sessionDate}
-                              onChange={handleEditInputChange}
-                              className="input input-bordered w-full"
-                            />
-                          </td>
-                          <td>
-                            <input
-                              type="text"
-                              name="sessionName"
-                              value={editFormData.sessionName}
-                              onChange={handleEditInputChange}
-                              placeholder="Session name"
-                              className="input input-bordered w-full"
-                            />
-                          </td>
-                          <td>
-                            <input
-                              type="text"
-                              name="playerName"
-                              value={editFormData.playerName}
-                              onChange={handleEditInputChange}
-                              className="input input-bordered w-full"
-                              placeholder="Player name"
-                            />
-                          </td>
-                          <td>
-                            <input
-                              type="number"
-                              name="buyIn"
-                              value={editFormData.buyIn}
-                              onChange={handleEditInputChange}
-                              className="input input-bordered w-full"
-                              step="0.01"
-                              min="0"
-                            />
-                          </td>
-                          <td>
-                            <input
-                              type="number"
-                              name="cashOut"
-                              value={editFormData.cashOut}
-                              onChange={handleEditInputChange}
-                              className="input input-bordered w-full"
-                              step="0.01"
-                              min="0"
-                            />
-                          </td>
-                          <td className={`${editFormData.cashOut - editFormData.buyIn >= 0 ? 'text-success' : 'text-error'}`}>
-                            ${editFormData.cashOut - editFormData.buyIn >= 0 ? (editFormData.cashOut - editFormData.buyIn).toFixed(2) : ((editFormData.cashOut - editFormData.buyIn) * -1).toFixed(2)}
-                          </td>
-                          <td>
-                            <div className="flex gap-2">
-                              <button 
-                                className="btn btn-primary btn-xs"
-                                onClick={() => handleSaveEdit(editingRow)}
-                              >
-                                Save
-                              </button>
-                              <button 
-                                className="btn btn-ghost btn-xs"
-                                onClick={handleCancelEdit}
-                              >
-                                Cancel
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ) : null}
-                      
-                      {/* Performance data rows */}
-                      {performanceData.map(session => (
-                        <tr key={session._id} className={editingRow === session._id ? 'bg-base-200' : ''}>
-                          {isGlobalEditMode && (
-                            <td>
-                              <label>
-                                <input
-                                  type="checkbox"
-                                  className="checkbox"
-                                  checked={selectedSessions.includes(session._id)}
-                                  onChange={() => handleSessionSelect(session._id)}
-                                />
-                              </label>
-                            </td>
-                          )}
-                          <td>{formatDate(session.sessionDate)}</td>
-                          <td>{session.sessionName || 'Unnamed Game'}</td>
-                          <td>{session.playerName}</td>
-                          <td>${formatMoney(session.buyIn)}</td>
-                          <td>${formatMoney(session.cashOut)}</td>
-                          <td className={session.profit >= 0 ? 'text-success' : 'text-error'}>
-                            ${formatMoney(session.profit)}
-                          </td>
-                          {/* Only show action buttons when in edit mode and actively editing a row */}
-                          {isGlobalEditMode && !editingRow && (
-                            <td>
-                              <button
-                                className="btn btn-xs btn-primary"
-                                onClick={() => handleEditClick(session)}
-                              >
-                                Edit
-                              </button>
-                            </td>
-                          )}
-                        </tr>
-                      ))}
-                      {/* Totals row */}
-                      <tr className="font-bold">
-                        {isGlobalEditMode && <td></td>}
-                        <td colSpan={3}>Totals</td>
-                        <td>${formatMoney(calculateTotalBuyIn())}</td>
-                        <td>${formatMoney(calculateTotalCashOut())}</td>
-                        <td className={calculateTotalProfit() >= 0 ? 'text-success' : 'text-error'}>
-                          ${formatMoney(calculateTotalProfit())}
-                        </td>
-                        {isGlobalEditMode && <td></td>}
-                      </tr>
-                    </tbody>
-                  </table>
+                <div className="w-16 h-16 flex items-center justify-center rounded-full bg-primary/20 group-hover:scale-110 transition-transform">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                  </svg>
                 </div>
-                
-                {/* Delete selected sessions button */}
-                {isGlobalEditMode && selectedSessions.length > 0 && (
-                  <div className="mt-4 flex justify-end">
+                <div className="text-center">
+                  <h3 className="text-lg font-semibold mb-1">Add Session</h3>
+                  <p className="text-sm opacity-70">Track a new session</p>
+                </div>
+                <div className="absolute bottom-0 left-0 w-full h-1 bg-primary scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
+              </motion.button>
+
+              {/* Edit Sessions */}
+              <motion.button
+                onClick={() => {
+                  setIsGlobalEditMode(!isGlobalEditMode);
+                  if (isGlobalEditMode) {
+                    setEditingRow(null);
+                    setEditFormData({});
+                  }
+                }}
+                className="group relative flex flex-col items-center gap-4 p-6 rounded-2xl bg-secondary/10 hover:bg-secondary/20 transition-all duration-300"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <div className="w-16 h-16 flex items-center justify-center rounded-full bg-secondary/20 group-hover:scale-110 transition-transform">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                  </svg>
+                </div>
+                <div className="text-center">
+                  <h3 className="text-lg font-semibold mb-1">{isGlobalEditMode ? 'Save Changes' : 'Edit Sessions'}</h3>
+                  <p className="text-sm opacity-70">{isGlobalEditMode ? 'Save your edits' : 'Modify existing sessions'}</p>
+                </div>
+                <div className="absolute bottom-0 left-0 w-full h-1 bg-secondary scale-x-0 group-hover:scale-x-100 transition-transform origin-left"></div>
+              </motion.button>
+            </div>
+          </div>
+
+          {/* Performance Chart Section */}
+          {performanceData.length > 0 && (
+            <motion.div 
+              variants={itemVariants}
+              className="card bg-base-100/90 shadow-xl backdrop-blur-sm border border-base-200 mb-8 overflow-hidden"
+            >
+              <div className="card-body p-6">
+                <div className="flex items-center justify-between mb-6">
+                  <h3 className="text-xl font-bold">Performance Overview</h3>
+                  <div className="badge badge-ghost">{performanceData.length} Sessions</div>
+                </div>
+                <div className="w-full" style={{ minHeight: "600px" }}>
+                  {displayChart()}
+                </div>
+              </div>
+            </motion.div>
+          )}
+
+          {/* Session History Section with Integrated Actions */}
+          {performanceData.length > 0 ? (
+            <motion.div 
+              variants={itemVariants}
+              className="card bg-base-100/90 shadow-xl backdrop-blur-sm border border-base-200"
+            >
+              <div className="card-body p-6">
+                {/* Header with Action Buttons */}
+                <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between mb-6">
+                  <h3 className="text-xl font-bold">Session History</h3>
+                  {isGlobalEditMode && selectedSessions.length > 0 && (
                     <button 
-                      className="btn btn-error" 
+                      className="btn btn-error btn-sm gap-2" 
                       onClick={handleOpenMultiDeleteModal}
                     >
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                      </svg>
                       Delete Selected ({selectedSessions.length})
                     </button>
-                  </div>
-                )}
-                
-                {/* Edit Mode Controls */}
+                  )}
+                </div>
+
+                {/* Edit Mode Instruction */}
                 {isGlobalEditMode && !editingRow && (
-                  <div className="flex justify-end mt-4">
-                    <button 
-                      className="btn btn-secondary"
-                      onClick={() => setIsGlobalEditMode(false)}
-                    >
-                      Save
-                    </button>
+                  <div className="alert alert-info mb-4 shadow-lg">
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" className="stroke-current shrink-0 w-6 h-6">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    <div>
+                      <h3 className="font-bold">Edit Mode Active</h3>
+                      <div className="text-sm">Select sessions to edit or delete by clicking on their rows.</div>
+                    </div>
                   </div>
                 )}
-                
-                {/* Edit Row Controls */}
-                {editingRow && (
-                  <div className="flex justify-end mt-4 gap-2">
-                    <button 
-                      className="btn btn-ghost"
-                      onClick={handleCancelEdit}
-                    >
-                      Cancel
-                    </button>
-                    <button 
-                      className="btn btn-primary"
-                      onClick={() => handleSaveEdit(editingRow)}
-                      disabled={loading}
-                    >
-                      {loading ? <span className="loading loading-spinner"></span> : 'Save'}
-                    </button>
+
+                <div className="overflow-x-auto overflow-y-visible">
+                  <div className="min-w-full inline-block align-middle">
+                    <div className="overflow-hidden">
+                      <table className="table w-full">
+                        <thead>
+                          <tr className="bg-base-200/50">
+                            {isGlobalEditMode && (
+                              <th className="w-16">
+                                <label>
+                                  <input
+                                    type="checkbox"
+                                    className="checkbox"
+                                    checked={selectedSessions.length === performanceData.length}
+                                    onChange={(e) => {
+                                      if (e.target.checked) {
+                                        setSelectedSessions(performanceData.map(item => item._id));
+                                      } else {
+                                        setSelectedSessions([]);
+                                      }
+                                    }}
+                                  />
+                                </label>
+                              </th>
+                            )}
+                            <th>Date</th>
+                            <th>Session</th>
+                            <th>Player</th>
+                            <th className="text-right">Buy-in</th>
+                            <th className="text-right">Cash-out</th>
+                            <th className="text-right">Profit/Loss</th>
+                            {isGlobalEditMode && <th className="w-24">Actions</th>}
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {performanceData.map(session => (
+                            <motion.tr 
+                              key={session._id} 
+                              className={`hover:bg-base-200/50 transition-colors ${editingRow === session._id ? 'bg-base-200/70' : ''}`}
+                              initial={{ opacity: 0, y: 20 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              whileHover={{ scale: 1.01 }}
+                              transition={{ duration: 0.2 }}
+                            >
+                              {isGlobalEditMode && (
+                                <td>
+                                  <label>
+                                    <input
+                                      type="checkbox"
+                                      className="checkbox"
+                                      checked={selectedSessions.includes(session._id)}
+                                      onChange={() => handleSessionSelect(session._id)}
+                                    />
+                                  </label>
+                                </td>
+                              )}
+                              <td className="font-medium">
+                                {editingRow === session._id ? (
+                                  <input
+                                    type="date"
+                                    name="sessionDate"
+                                    value={editFormData.sessionDate}
+                                    onChange={handleEditInputChange}
+                                    className="input input-bordered input-sm w-full"
+                                  />
+                                ) : formatDate(session.sessionDate)}
+                              </td>
+                              <td>
+                                {editingRow === session._id ? (
+                                  <input
+                                    type="text"
+                                    name="sessionName"
+                                    value={editFormData.sessionName}
+                                    onChange={handleEditInputChange}
+                                    className="input input-bordered input-sm w-full"
+                                    placeholder="Enter session name"
+                                  />
+                                ) : (session.sessionName || 'Unnamed Game')}
+                              </td>
+                              <td>
+                                {editingRow === session._id ? (
+                                  <input
+                                    type="text"
+                                    name="playerName"
+                                    value={editFormData.playerName}
+                                    onChange={handleEditInputChange}
+                                    className="input input-bordered input-sm w-full"
+                                    placeholder="Enter player name"
+                                  />
+                                ) : session.playerName}
+                              </td>
+                              <td className="text-right">
+                                {editingRow === session._id ? (
+                                  <input
+                                    type="number"
+                                    name="buyIn"
+                                    value={editFormData.buyIn}
+                                    onChange={handleEditInputChange}
+                                    className="input input-bordered input-sm w-full text-right"
+                                    step="1"
+                                    min="0"
+                                  />
+                                ) : `$${formatMoney(session.buyIn)}`}
+                              </td>
+                              <td className="text-right">
+                                {editingRow === session._id ? (
+                                  <input
+                                    type="number"
+                                    name="cashOut"
+                                    value={editFormData.cashOut}
+                                    onChange={handleEditInputChange}
+                                    className="input input-bordered input-sm w-full text-right"
+                                    step="1"
+                                    min="0"
+                                  />
+                                ) : `$${formatMoney(session.cashOut)}`}
+                              </td>
+                              <td className={`text-right font-semibold ${session.profit >= 0 ? 'text-success' : 'text-error'}`}>
+                                ${formatMoney(session.profit)}
+                              </td>
+                              {isGlobalEditMode && !editingRow && (
+                                <td>
+                                  <div className="flex gap-2 justify-end">
+                                    <button
+                                      className="btn btn-ghost btn-xs"
+                                      onClick={() => handleEditClick(session)}
+                                    >
+                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                                      </svg>
+                                    </button>
+                                  </div>
+                                </td>
+                              )}
+                              {editingRow === session._id && (
+                                <td>
+                                  <div className="flex gap-2 justify-end">
+                                    <button
+                                      className="btn btn-ghost btn-xs"
+                                      onClick={handleCancelEdit}
+                                    >
+                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-error" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                                      </svg>
+                                    </button>
+                                    <button
+                                      className="btn btn-ghost btn-xs"
+                                      onClick={() => handleSaveEdit(session._id)}
+                                    >
+                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                                      </svg>
+                                    </button>
+                                  </div>
+                                </td>
+                              )}
+                            </motion.tr>
+                          ))}
+                        </tbody>
+                        <tfoot className="border-t-2 border-base-200">
+                          <tr className="font-bold">
+                            {isGlobalEditMode && <td></td>}
+                            <td colSpan={3}>Totals</td>
+                            <td className="text-right">${formatMoney(calculateTotalBuyIn())}</td>
+                            <td className="text-right">${formatMoney(calculateTotalCashOut())}</td>
+                            <td className={`text-right ${calculateTotalProfit() >= 0 ? 'text-success' : 'text-error'}`}>
+                              ${formatMoney(calculateTotalProfit())}
+                            </td>
+                            {isGlobalEditMode && <td></td>}
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
                   </div>
-                )}
+                </div>
               </div>
-            </div>
+            </motion.div>
+          ) : (
+            <motion.div 
+              variants={itemVariants}
+              className="card bg-base-100/90 shadow-xl backdrop-blur-sm border border-base-200"
+            >
+              <div className="card-body p-12 text-center">
+                <div className="max-w-md mx-auto">
+                  <div className="w-24 h-24 mx-auto mb-6 rounded-full bg-primary/10 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 text-primary/70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                    </svg>
+                  </div>
+                  <h3 className="text-2xl font-bold mb-4">Start Tracking Your Performance</h3>
+                  <p className="text-base-content/70 mb-8">
+                    Add your first poker session to begin tracking your progress and analyzing your results.
+                  </p>
+                  <button 
+                    className="btn btn-primary btn-lg gap-2"
+                    onClick={handleOpenAddModal}
+                  >
+                    Add Your First Session
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </motion.div>
           )}
-          
-          {/* Performance chart and stats - moved to the bottom of the page */}
-          {!loading && displayChart()}
-          
+
+          {/* Advanced Statistics Section */}
+          {performanceData.length > 0 && (
+            <motion.div 
+              variants={itemVariants}
+              className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6"
+            >
+              {/* Winning Streaks Card */}
+              <motion.div 
+                className="card bg-base-100/90 shadow-xl backdrop-blur-sm border border-base-200"
+                whileHover={{ y: -5 }}
+              >
+                <div className="card-body">
+                  <h3 className="text-xl font-bold flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 rounded-full bg-success/10 flex items-center justify-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                      </svg>
+                    </div>
+                    Winning Streaks
+                  </h3>
+                  
+                  <div className="space-y-6">
+                    {/* Longest Win Streak */}
+                    <div className="bg-base-200/50 rounded-xl p-4">
+                      <div className="text-sm text-base-content/70 mb-2">Longest Win Streak</div>
+                      {calculateStats().winningStreak.length > 0 ? (
+                        <>
+                          <div className="text-2xl font-bold text-success mb-2">
+                            {calculateStats().winningStreak.length} Sessions 🔥
+                          </div>
+                          <div className="text-sm opacity-70">
+                            {formatDate(calculateStats().winningStreak[0].sessionDate)} - {formatDate(calculateStats().winningStreak[calculateStats().winningStreak.length - 1].sessionDate)}
+                          </div>
+                          <div className="text-success font-semibold mt-2">
+                            Total Profit: ${formatMoney(calculateStreakProfit(calculateStats().winningStreak))} 💰
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-base opacity-70">No winning streak yet 🎲</div>
+                      )}
+                    </div>
+
+                    {/* Biggest Single Win */}
+                    <div className="bg-base-200/50 rounded-xl p-4">
+                      <div className="text-sm text-base-content/70 mb-2">Biggest Single Win</div>
+                      {calculateStats().biggestWin ? (
+                        <>
+                          <div className="text-2xl font-bold text-success mb-2">
+                            ${formatMoney(calculateStats().biggestWin.profit)} 🎯
+                          </div>
+                          <div className="text-sm opacity-70">
+                            {calculateStats().biggestWin.sessionName || 'Unnamed Game'}
+                          </div>
+                          <div className="text-sm opacity-70">
+                            {formatDate(calculateStats().biggestWin.sessionDate)}
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-base opacity-70">No wins recorded yet 🎲</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Losing Streaks Card */}
+              <motion.div 
+                className="card bg-base-100/90 shadow-xl backdrop-blur-sm border border-base-200"
+                whileHover={{ y: -5 }}
+              >
+                <div className="card-body">
+                  <h3 className="text-xl font-bold flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 rounded-full bg-error/10 flex items-center justify-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-error" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6" />
+                      </svg>
+                    </div>
+                    Recovery Opportunities
+                  </h3>
+                  
+                  <div className="space-y-6">
+                    {/* Longest Losing Streak */}
+                    <div className="bg-base-200/50 rounded-xl p-4">
+                      <div className="text-sm text-base-content/70 mb-2">Longest Downswing</div>
+                      {calculateStats().losingStreak.length > 0 ? (
+                        <>
+                          <div className="text-2xl font-bold text-error mb-2">
+                            {calculateStats().losingStreak.length} Sessions 📉
+                          </div>
+                          <div className="text-sm opacity-70">
+                            {formatDate(calculateStats().losingStreak[0].sessionDate)} - {formatDate(calculateStats().losingStreak[calculateStats().losingStreak.length - 1].sessionDate)}
+                          </div>
+                          <div className="text-error font-semibold mt-2">
+                            Total Loss: ${formatMoney(Math.abs(calculateStreakProfit(calculateStats().losingStreak)))} 🥶
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-base opacity-70">No losing streak yet! 🍀</div>
+                      )}
+                    </div>
+
+                    {/* Biggest Single Loss */}
+                    <div className="bg-base-200/50 rounded-xl p-4">
+                      <div className="text-sm text-base-content/70 mb-2">Biggest Single Loss</div>
+                      {calculateStats().biggestLoss ? (
+                        <>
+                          <div className="text-2xl font-bold text-error mb-2">
+                            ${formatMoney(Math.abs(calculateStats().biggestLoss.profit))} 😅
+                          </div>
+                          <div className="text-sm opacity-70">
+                            {calculateStats().biggestLoss.sessionName || 'Unnamed Game'}
+                          </div>
+                          <div className="text-sm opacity-70">
+                            {formatDate(calculateStats().biggestLoss.sessionDate)}
+                          </div>
+                        </>
+                      ) : (
+                        <div className="text-base opacity-70">No losses yet! 🎰</div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+
+              {/* Additional Statistics Card */}
+              <motion.div 
+                className="card bg-base-100/90 shadow-xl backdrop-blur-sm border border-base-200 md:col-span-2"
+                whileHover={{ y: -5 }}
+              >
+                <div className="card-body">
+                  <h3 className="text-xl font-bold flex items-center gap-3 mb-6">
+                    <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                      <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                      </svg>
+                    </div>
+                    Performance Insights
+                  </h3>
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* Win Rate */}
+                    <div className="bg-base-200/50 rounded-xl p-4">
+                      <div className="text-sm text-base-content/70 mb-2">Win Rate</div>
+                      <div className="text-2xl font-bold">
+                        {Math.round((performanceData.filter(session => session.profit > 0).length / performanceData.length) * 100)}%
+                      </div>
+                      <div className="text-sm opacity-70">
+                        {performanceData.filter(session => session.profit > 0).length} winning sessions
+                      </div>
+                    </div>
+
+                    {/* Average Win */}
+                    <div className="bg-base-200/50 rounded-xl p-4">
+                      <div className="text-sm text-base-content/70 mb-2">Average Win</div>
+                      <div className="text-2xl font-bold text-success">
+                        ${formatMoney(performanceData.filter(session => session.profit > 0).reduce((acc, session) => acc + session.profit, 0) / performanceData.filter(session => session.profit > 0).length || 0)}
+                      </div>
+                      <div className="text-sm opacity-70">Per winning session</div>
+                    </div>
+
+                    {/* Average Loss */}
+                    <div className="bg-base-200/50 rounded-xl p-4">
+                      <div className="text-sm text-base-content/70 mb-2">Average Loss</div>
+                      <div className="text-2xl font-bold text-error">
+                        ${formatMoney(Math.abs(performanceData.filter(session => session.profit < 0).reduce((acc, session) => acc + session.profit, 0) / performanceData.filter(session => session.profit < 0).length || 0))}
+                      </div>
+                      <div className="text-sm opacity-70">Per losing session</div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+
           {/* Add Session Modal */}
           {isAddModalOpen && (
             <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
@@ -1368,6 +1441,67 @@ const Bankroll = () => {
           )}
         </motion.div>
       </div>
+
+      {/* Sticky Action Bar */}
+      {performanceData.length > 0 && (
+        <motion.div 
+          className="fixed bottom-0 left-0 right-0 bg-base-100/95 backdrop-blur-lg border-t border-base-200 shadow-lg z-50"
+          initial={{ y: 100 }}
+          animate={{ y: 0 }}
+          transition={{ type: "spring", stiffness: 300, damping: 30 }}
+        >
+          <div className="container mx-auto px-4 py-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-2xl mx-auto">
+              {/* Add Session */}
+              <motion.button
+                onClick={handleOpenAddModal}
+                className="btn btn-primary gap-2 w-full"
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+                </svg>
+                Add Session
+              </motion.button>
+
+              {/* Edit Sessions */}
+              <motion.button
+                onClick={() => {
+                  setIsGlobalEditMode(!isGlobalEditMode);
+                  if (isGlobalEditMode) {
+                    setEditingRow(null);
+                    setEditFormData({});
+                  }
+                }}
+                className={`btn gap-2 w-full ${isGlobalEditMode ? 'btn-secondary' : 'btn-outline'}`}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                {isGlobalEditMode ? 'Save Changes' : 'Edit Sessions'}
+              </motion.button>
+
+              {/* Delete Selected Button (Only shows when sessions are selected) */}
+              {isGlobalEditMode && selectedSessions.length > 0 && (
+                <motion.button
+                  onClick={handleOpenMultiDeleteModal}
+                  className="btn btn-error gap-2 w-full sm:col-span-2"
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                  </svg>
+                  Delete Selected ({selectedSessions.length})
+                </motion.button>
+              )}
+            </div>
+          </div>
+        </motion.div>
+      )}
     </motion.div>
   );
 };
