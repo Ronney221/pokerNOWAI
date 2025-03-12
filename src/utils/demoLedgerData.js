@@ -37,17 +37,26 @@ const generateDemoPlayers = () => {
     .sort(() => Math.random() - 0.5)
     .slice(0, numPlayers);
   
+  // First, generate buy-ins for all players
+  let totalBuyIn = 0;
   selectedNames.forEach(name => {
     const buyIn = Math.floor(Math.random() * 400 + 100); // $100-$500 buy-in
-    const profitMultiplier = (Math.random() * 2 - 0.5); // Random multiplier between -0.5 and 1.5
-    const cashOut = Math.max(0, Math.floor(buyIn * (1 + profitMultiplier)));
-    
-    players.push({
-      name,
-      buyIn,
-      cashOut
-    });
+    totalBuyIn += buyIn;
+    players.push({ name, buyIn, cashOut: 0 });
   });
+
+  // Then, distribute the total buy-in amount among players for cash-outs
+  let remainingAmount = totalBuyIn;
+  for (let i = 0; i < players.length - 1; i++) {
+    // For all but the last player, assign a random cash-out
+    const maxCashOut = remainingAmount - (players.length - i - 1) * 50; // Ensure at least $50 left for each remaining player
+    const minCashOut = 0;
+    const cashOut = Math.floor(Math.random() * (maxCashOut - minCashOut)) + minCashOut;
+    players[i].cashOut = cashOut;
+    remainingAmount -= cashOut;
+  }
+  // Last player gets the remaining amount to ensure total cash-out equals total buy-in
+  players[players.length - 1].cashOut = remainingAmount;
   
   return players;
 };
@@ -80,7 +89,7 @@ const generateDemoTransactions = (players) => {
         transactions.push({
           from: loser.name,
           to: winner.name,
-          amount: amount
+          amount: amount.toFixed(2)
         });
         remainingToPay -= amount;
       }
@@ -90,7 +99,7 @@ const generateDemoTransactions = (players) => {
     if (remainingToPay > 0 && transactions.length > 0) {
       const lastTx = transactions[transactions.length - 1];
       if (lastTx.from === loser.name) {
-        lastTx.amount += remainingToPay;
+        lastTx.amount = (parseFloat(lastTx.amount) + remainingToPay).toFixed(2);
       }
     }
   });
