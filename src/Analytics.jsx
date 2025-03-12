@@ -5,6 +5,7 @@ import { toast } from 'react-toastify';
 import { motion, AnimatePresence } from 'framer-motion';
 import { API_URL } from './config/api';
 import './index.css';
+import generateDemoAnalytics from './utils/demoAnalyticsData';
 
 const Analytics = ({ setCurrentPage }) => {
   const { currentUser } = useAuth();
@@ -93,10 +94,18 @@ const Analytics = ({ setCurrentPage }) => {
       setIsLoading(true);
       setError(null);
       
+      if (!currentUser) {
+        // Load demo data for non-logged-in users
+        const demoData = generateDemoAnalytics();
+        setAnalysisData(demoData.data);
+        setSelectedAnalysis(demoData.data.analysis[0]);
+        setSelectedPlayerTab('Player1');
+        setIsLoading(false);
+        setLoading(false);
+        return;
+      }
+      
       try {
-        //console.log('Fetching analysis data...');
-        //console.log('API URL:', `${herokuBase}/api/analysis/${currentUser.uid}`);
-        
         const response = await fetch(
           `${herokuBase}/api/analysis/${currentUser.uid}`,
           {
@@ -109,14 +118,10 @@ const Analytics = ({ setCurrentPage }) => {
           }
         );
         
-        //console.log('Response status:', response.status);
-        
         const data = await response.json().catch(e => {
           console.error('Error parsing JSON:', e);
           return null;
         });
-        
-        //('API Response:', data);
         
         if (!response.ok) {
           throw new Error(
@@ -129,35 +134,28 @@ const Analytics = ({ setCurrentPage }) => {
           throw new Error('Invalid response format from API');
         }
         
-        // Get the most recent analysis from the array
         const analyses = data.data.analysis;
         if (!analyses || !Array.isArray(analyses) || analyses.length === 0) {
           throw new Error('No analyses found');
         }
         
-        // Sort analyses by timestamp in descending order and get the most recent
         const sortedAnalyses = analyses.sort((a, b) => 
           new Date(b.timestamp) - new Date(a.timestamp)
         );
         const mostRecentAnalysis = sortedAnalyses[0];
         
-        //console.log('Most recent analysis:', mostRecentAnalysis);
-        
-        // Validate the analysis data structure
         if (!mostRecentAnalysis.files || 
             !mostRecentAnalysis.files.charts || 
             !mostRecentAnalysis.files.hands) {
           throw new Error('Invalid analysis data structure');
         }
         
-        // Set both the full data and the selected analysis
         setAnalysisData({
           ...data.data,
-          analysis: sortedAnalyses // Store all analyses
+          analysis: sortedAnalyses
         });
-        setSelectedAnalysis(mostRecentAnalysis); // Set the most recent as selected
+        setSelectedAnalysis(mostRecentAnalysis);
         
-        // Set initial selected player from the first available player
         if (mostRecentAnalysis.files.players && 
             Object.keys(mostRecentAnalysis.files.players).length > 0) {
           const firstPlayer = Object.keys(mostRecentAnalysis.files.players)[0];
@@ -169,13 +167,11 @@ const Analytics = ({ setCurrentPage }) => {
         setError(err.message);
       } finally {
         setIsLoading(false);
-        setLoading(false); // Also set the other loading state
+        setLoading(false);
       }
     };
 
-    if (currentUser) {
-      fetchAnalysis();
-    }
+    fetchAnalysis();
   }, [currentUser, herokuBase]);
 
   // Format date helper function
@@ -501,15 +497,377 @@ const Analytics = ({ setCurrentPage }) => {
   
   if (!currentUser) {
     return (
-      <div className="min-h-screen bg-gradient-to-b from-base-100 to-base-200/50 py-12 flex items-center justify-center">
-        <div className="card bg-base-100/90 shadow-xl backdrop-blur-sm border border-base-200 max-w-lg mx-4">
-          <div className="card-body text-center p-8">
-            <h2 className="text-2xl font-bold mb-4">Please Log In</h2>
-            <p className="opacity-70 mb-6">You need to be logged in to view analytics.</p>
-            <button className="btn btn-primary" onClick={() => handlePageChange('login')}>
-              Log In
+      <div className="min-h-screen bg-gradient-to-b from-base-100 to-base-200/50 py-12 pt-48">
+        <div className="container mx-auto px-4 relative z-10">
+          <div className="text-center mb-12">
+            <h1 className="text-4xl font-bold mb-6 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+              Poker Analysis Dashboard
+            </h1>
+            <p className="text-lg opacity-80 max-w-2xl mx-auto mb-8 mt-8 text-primary">
+              👋 You're viewing demo data. Sign in to analyze your own poker games!
+            </p>
+            <button 
+              className="btn btn-primary btn-lg"
+              onClick={() => handlePageChange('login')}
+            >
+              Get Started
             </button>
           </div>
+
+          {selectedAnalysis && !selectedView && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+            >
+              <AnalysisCard
+                title="Player Analysis Dashboard"
+                description="Deep dive into individual players: view their preflop ranges, betting patterns, and detailed metrics all in one place."
+                type="ranges"
+                icon={
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                  </svg>
+                }
+                isPremium={false}
+              />
+
+              <AnalysisCard
+                title="Player Metrics"
+                description="Track your VPIP, 3-bet%, and other key metrics to understand and improve your playing style."
+                type="metrics"
+                icon={
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                          </svg>
+                }
+                isPremium={false}
+              />
+
+              <AnalysisCard
+                title="Notable Hands"
+                description="Review your biggest wins and losses to understand what situations are most profitable for you."
+                type="hands"
+                icon={
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  </svg>
+                }
+                isPremium={false}
+              />
+            </motion.div>
+          )}
+
+          {selectedAnalysis && selectedView && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="card bg-base-100/90 shadow-xl backdrop-blur-sm border border-base-200 relative"
+            >
+              {/* Navigation Arrows */}
+              <button 
+                className="btn btn-circle btn-lg btn-ghost absolute top-1/2 -left-20 transform -translate-y-1/2 hidden md:flex items-center justify-center w-16 h-16 hover:bg-base-200/50"
+                onClick={() => navigateView('prev')}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+                </svg>
+              </button>
+              <button 
+                className="btn btn-circle btn-lg btn-ghost absolute top-1/2 -right-20 transform -translate-y-1/2 hidden md:flex items-center justify-center w-16 h-16 hover:bg-base-200/50"
+                onClick={() => navigateView('next')}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                </svg>
+              </button>
+
+              <div className="card-body p-8">
+                <div className="flex justify-between items-center mb-8">
+                  <h2 className="text-3xl font-bold">
+                    {selectedView === 'ranges' && 'Opponent Preflop Ranges'}
+                    {selectedView === 'metrics' && 'Player Metrics'}
+                    {selectedView === 'hands' && 'Notable Hands'}
+                    {selectedView === 'charts' && 'Chart Analysis'}
+                  </h2>
+                  <button 
+                    className="btn btn-ghost btn-circle"
+                    onClick={() => setSelectedView(null)}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+
+                {/* Mobile Navigation (only visible on small screens) */}
+                <div className="flex justify-between items-center mb-4 md:hidden">
+                  <button 
+                    className="btn btn-circle btn-ghost"
+                    onClick={() => navigateView('prev')}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                  </button>
+                  <button 
+                    className="btn btn-circle btn-ghost"
+                    onClick={() => navigateView('next')}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                  </button>
+                </div>
+                
+                {selectedView === 'ranges' && (
+                  <>
+                    <div className="mb-8">
+                      {/* Player Selection */}
+                      <h3 className="text-lg font-medium mb-4 opacity-70">Select Player to Analyze</h3>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3">
+                        {selectedAnalysis?.files.players && Object.keys(selectedAnalysis.files.players).map((player) => (
+                          <button
+                            key={player}
+                            className={`btn btn-lg h-auto py-4 ${selectedPlayerTab === player.replace('.json', '') ? 'btn-primary' : 'btn-ghost'} w-full`}
+                            onClick={() => setSelectedPlayerTab(player.replace('.json', ''))}
+                          >
+                            {player.replace('.json', '')}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                    
+                    {selectedPlayerTab && (
+                      <AnimatePresence mode="wait">
+                        <motion.div
+                          key={selectedPlayerTab}
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="space-y-8"
+                        >
+                          {/* Player Metrics Summary */}
+                          {selectedAnalysis?.files.charts?.["player_metrics_chart.json"] && (
+                            <div className="card bg-base-100/90 shadow-xl backdrop-blur-sm border border-base-200">
+                              <div className="card-body p-8">
+                                <div className="flex items-center justify-between mb-6">
+                                  <h3 className="card-title text-2xl">Player Performance Metrics</h3>
+                                </div>
+                                {selectedAnalysis.files.charts["player_metrics_chart.json"]
+                                  .filter(metric => {
+                                    const normalizedMetricPlayer = metric.Player.toLowerCase().replace(/\s+/g, '');
+                                    const normalizedSelectedPlayer = selectedPlayerTab.toLowerCase().replace(/\s+/g, '');
+                                    return normalizedMetricPlayer === normalizedSelectedPlayer && metric["Hands Played"] > 0;
+                                  })
+                                  .map((metric, index) => (
+                                    <div key={index} className="flex justify-between gap-4">
+                                      <div className="stat flex-1 bg-base-200/50 rounded-xl p-6 text-center">
+                                        <div className="stat-title text-lg opacity-80">Hands Played</div>
+                                        <div className="stat-value text-4xl text-primary">{metric["Hands Played"]}</div>
+                                        <div className="stat-desc text-lg">Total Hands</div>
+                                      </div>
+                                      <div className="stat flex-1 bg-base-200/50 rounded-xl p-6 text-center">
+                                        <div className="stat-title text-lg opacity-80">VPIP</div>
+                                        <div className="stat-value text-4xl">{metric["VPIP %"]}%</div>
+                                        <div className="stat-desc text-lg">{metric["VPIP"]} voluntary hands</div>
+                          </div>
+                        </div>
+                                  ))}
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Player Range Analysis Section */}
+                          <div className="space-y-4">
+                            <div className="flex items-center justify-between">
+                              <h3 className="text-xl font-medium">Range Analysis</h3>
+                              <div className="text-sm opacity-70">
+                                Showing top 12 preflop actions
+                              </div>
+                            </div>
+                            
+                            {/* Preflop Ranges Grid */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                              {selectedAnalysis?.files.players && 
+                                selectedAnalysis.files.players[`${selectedPlayerTab}.json`]
+                                  ?.filter(player => player)
+                                  .slice(0, shouldShowPremiumContent ? undefined : 12)
+                                  .map((player, index) => (
+                                    <PlayerCard key={index} player={player} />
+                                  ))}
+                            </div>
+
+                            {/* Premium/Trial Prompt - Only show if user has no access */}
+                            {selectedAnalysis?.files.players && 
+                             selectedAnalysis.files.players[`${selectedPlayerTab}.json`]?.length > 12 &&
+                             !shouldShowPremiumContent && (
+                              <div className="card bg-base-100/90 shadow-xl backdrop-blur-sm border border-base-200 p-8 text-center mt-8">
+                                <div className="text-warning mb-4">
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                                  </svg>
+                                </div>
+                                <h3 className="text-xl font-bold mb-2">
+                                  See {selectedAnalysis.files.players[`${selectedPlayerTab}.json`].length - 12} More Preflop Actions
+                                </h3>
+                                <p className="text-base-content/70 mb-6">
+                                  Start your free trial to unlock all preflop actions and get complete insights into player tendencies.
+                                </p>
+                                <div className="flex justify-center gap-4">
+                                  <button 
+                                    onClick={() => handlePageChange('payment')}
+                                    className="btn btn-primary"
+                                  >
+                                    Start Free Trial
+                                  </button>
+                                </div>
+                                <p className="text-sm text-base-content/70 mt-4">
+                                  No credit card required • 14-day free trial • Cancel anytime
+                                </p>
+                              </div>
+                            )}
+                          </div>
+
+                          {/* No Data Message */}
+                          {(!selectedAnalysis?.files.players?.[`${selectedPlayerTab}.json`] ||
+                            selectedAnalysis.files.players[`${selectedPlayerTab}.json`].length === 0) && (
+                            <div className="text-center py-8">
+                              <div className="text-warning mb-4">
+                                <svg xmlns="http://www.w3.org/2000/svg" className="h-12 w-12 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                  </div>
+                              <p className="text-lg opacity-70">No range data available for this player</p>
+                        </div>
+                          )}
+                        </motion.div>
+                      </AnimatePresence>
+                    )}
+                  </>
+                )}
+
+                {selectedView === 'metrics' && (
+                  <div>
+                    {selectedAnalysis?.files.charts?.["player_metrics_chart.json"] ? (
+                      <MetricsTable metrics={selectedAnalysis.files.charts["player_metrics_chart.json"]} />
+                    ) : (
+                      <p className="text-center text-base-content/70 py-8">No player metrics available</p>
+                    )}
+                  </div>
+                )}
+
+                {selectedView === 'hands' && (
+                  <div className="space-y-8">
+                    {selectedAnalysis?.files.hands && 
+                     Object.keys(selectedAnalysis.files.hands).length > 0 ? (
+                      (() => {
+                        const playerName = Object.keys(selectedAnalysis.files.hands)
+                          .find(key => key.endsWith('_top10_wins.json'))
+                          ?.split('_')[0];
+
+                        return (
+                          <>
+                            <HandsTable 
+                              hands={selectedAnalysis.files.hands[`${playerName}_top10_wins.json`]}
+                              title="Top Winning Hands" 
+                              playerName={playerName}
+                            />
+                            <HandsTable 
+                              hands={selectedAnalysis.files.hands[`${playerName}_top10_losses.json`]}
+                              title="Top Losing Hands"
+                              playerName={playerName}
+                            />
+                          </>
+                        );
+                      })()
+                    ) : (
+                      <div className="card bg-base-100/90 shadow-xl backdrop-blur-sm border border-base-200">
+                        <div className="card-body text-center py-8">
+                          <div className="text-warning mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                    </svg>
+                  </div>
+                          <p className="text-lg text-base-content/70">
+                            No notable hands were found in your PokerNow CSV log. This could happen if no significant hands were played or if the log file was incomplete.
+                          </p>
+                </div>
+              </div>
+                    )}
+                  </div>
+                )}
+
+                {selectedView === 'charts' && (
+                  <>
+                    <div className="flex flex-col md:flex-row gap-6 mb-8">
+                      {/* Chart Type Selection */}
+                      <div className="flex-1">
+                        <h3 className="text-lg font-medium mb-4 opacity-70">Chart Type</h3>
+                        <div className="flex flex-wrap gap-2">
+                          <button
+                            className={`btn ${selectedChartTab === 'chart_3bet' ? 'btn-primary' : 'btn-ghost'}`}
+                            onClick={() => setSelectedChartTab('chart_3bet')}
+                          >
+                            3Bet Chart
+                          </button>
+                          <button
+                            className={`btn ${selectedChartTab === 'chart_raise' ? 'btn-primary' : 'btn-ghost'}`}
+                            onClick={() => setSelectedChartTab('chart_raise')}
+                          >
+                            Raise Chart
+                          </button>
+                          <button
+                            className={`btn ${selectedChartTab === 'full_shows_chart' ? 'btn-primary' : 'btn-ghost'}`}
+                            onClick={() => setSelectedChartTab('full_shows_chart')}
+                          >
+                            Full Shows
+                  </button>
+                </div>
+              </div>
+            </div>
+            
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={selectedChartTab}
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+                      >
+                        {selectedAnalysis?.files.charts && selectedChartTab && 
+                          selectedAnalysis.files.charts[`${selectedChartTab}.json`]
+                            ?.filter(chart => chart)
+                            .map((chart, index) => (
+                              <ChartCard key={index} data={chart} />
+                            ))}
+                      </motion.div>
+                    </AnimatePresence>
+
+                    {/* Add Premium Lock for Chart Analysis */}
+                    <div className="card bg-base-100/90 shadow-xl backdrop-blur-sm border border-base-200">
+                      <div className="card-body p-8 text-center">
+                        <div className="text-warning mb-4">
+                          <svg xmlns="http://www.w3.org/2000/svg" className="h-16 w-16 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
+                    </svg>
+                  </div>
+                        <h2 className="text-3xl font-bold mb-4">Premium Feature</h2>
+                        <p className="text-lg text-base-content/70 mb-6">
+                          Chart Analysis is a premium feature that provides deep insights into betting patterns and player tendencies.
+                        </p>
+                        <button className="btn btn-primary btn-lg">
+                          Upgrade to Premium
+                  </button>
+                </div>
+              </div>
+                  </>
+                )}
+              </div>
+            </motion.div>
+          )}
         </div>
       </div>
     );

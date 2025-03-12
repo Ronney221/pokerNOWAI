@@ -13,7 +13,7 @@ import {
 // Protected routes configuration
 const PROTECTED_ROUTES = {
   fullLogUpload: true,
-  analytics: true,
+  analytics: false,
   'saved-ledgers': false,
   bankroll: false,
   ledger: false
