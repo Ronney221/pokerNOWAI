@@ -96,67 +96,85 @@ const Dashboard = ({ performanceData }) => {
   };
 
   return (
-    <div className="bg-gradient-to-b from-base-100 via-base-100/50 to-base-200/30">
-      <div className="container mx-auto px-4 py-8">
-        {/* Chart Type Selection */}
-        <div className="mb-6">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            {chartTypes.map((chart) => (
-              <motion.button
-                key={chart.id}
-                onClick={() => setSelectedChartType(chart.id)}
-                className={`
-                  relative overflow-hidden rounded-xl p-3
-                  ${selectedChartType === chart.id
-                    ? 'bg-primary text-primary-content'
-                    : 'bg-base-200 hover:bg-base-300 text-base-content'
-                  }
-                  transition-all duration-300 ease-in-out
-                `}
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-              >
-                <div className="flex flex-col items-center gap-1">
-                  {chart.icon}
-                  <span className="font-medium text-xs">{chart.name}</span>
-                </div>
-                {selectedChartType === chart.id && (
-                  <motion.div
-                    className="absolute bottom-0 left-0 h-0.5 bg-primary-content"
-                    initial={{ width: 0 }}
-                    animate={{ width: '100%' }}
-                    transition={{ duration: 0.3 }}
-                  />
-                )}
-              </motion.button>
-            ))}
+    <div className="bg-gradient-to-b from-base-100 via-base-100/50 to-base-200/30 min-h-screen">
+      <div className="container mx-auto px-4 py-6">
+        {/* Page Header */}
+        <motion.div 
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="mb-12"
+        >
+          <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-2">
+            Performance Overview
+          </h1>
+          <p className="text-base-content/70 text-lg">
+            Track your poker journey and analyze your results
+          </p>
+        </motion.div>
+
+        {/* Chart Type Selection with Enhanced UI */}
+        <div className="mb-8">
+          <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+            {/* Left side - Chart Type Selection */}
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+              {chartTypes.map((chart) => (
+                <motion.button
+                  key={chart.id}
+                  onClick={() => setSelectedChartType(chart.id)}
+                  className={`
+                    relative overflow-hidden rounded-xl p-3
+                    ${selectedChartType === chart.id
+                      ? 'bg-primary text-primary-content shadow-lg'
+                      : 'bg-base-200 hover:bg-base-300 text-base-content hover:shadow-md'
+                    }
+                    transition-all duration-300 ease-in-out
+                  `}
+                  whileHover={{ scale: 1.02 }}
+                  whileTap={{ scale: 0.98 }}
+                >
+                  <div className="flex flex-col items-center gap-2">
+                    {chart.icon}
+                    <span className="font-medium text-sm">{chart.name}</span>
+                  </div>
+                  {selectedChartType === chart.id && (
+                    <motion.div
+                      className="absolute bottom-0 left-0 h-1 bg-primary-content"
+                      initial={{ width: 0 }}
+                      animate={{ width: '100%' }}
+                      transition={{ duration: 0.3 }}
+                    />
+                  )}
+                </motion.button>
+              ))}
+            </div>
+
+            {/* Right side - Filters */}
+            <div className="flex items-center gap-4 bg-base-100 rounded-xl px-4 py-2 shadow-sm border border-base-200">
+              <DateRangeFilter
+                onDateRangeChange={range => setDateRange(range)}
+              />
+              <div className="h-8 w-px bg-base-300/50" /> {/* Vertical divider */}
+              <PlayerFilter
+                data={performanceData}
+                selectedPlayers={selectedPlayers}
+                onSelectedPlayersChange={setSelectedPlayers}
+              />
+            </div>
           </div>
         </div>
 
-        {/* Filters Section */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex flex-wrap items-center justify-between gap-4 mb-6 bg-base-100 p-3 rounded-lg shadow-sm"
-        >
-          <div className="flex items-center gap-4">
-            <DateRangeFilter
-              onDateRangeChange={range => setDateRange(range)}
-            />
-            <PlayerFilter
-              data={performanceData}
-              selectedPlayers={selectedPlayers}
-              onSelectedPlayersChange={setSelectedPlayers}
-            />
-          </div>
-        </motion.div>
-
-        {/* Chart Display */}
+        {/* Chart Display with Enhanced Card */}
         <motion.div
           layout
           className="card bg-base-100 shadow-xl backdrop-blur-sm border border-base-200 mb-16"
         >
-          <div className="card-body p-4">
+          <div className="card-body p-6">
+            <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
+              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
+              </svg>
+              Session Analysis
+            </h2>
             <AnimatePresence mode="wait">
               <motion.div
                 key={selectedChartType}
@@ -172,16 +190,19 @@ const Dashboard = ({ performanceData }) => {
           </div>
         </motion.div>
 
-        {/* Analytics Panel */}
+        {/* Analytics Panel with Enhanced Spacing */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
-          className="card bg-base-100 shadow-xl mb-8"
         >
-          <div className="card-body p-6">
-            <AnalyticsPanel data={filteredData} />
-          </div>
+          <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+            </svg>
+            Performance Metrics
+          </h2>
+          <AnalyticsPanel data={filteredData} />
         </motion.div>
       </div>
     </div>
