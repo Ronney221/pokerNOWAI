@@ -310,10 +310,11 @@ const AreaChartComponent = ({ data }) => {
               fill="url(#areaGradient)"
               fillOpacity={1}
               dot={(props) => {
-                const { cx, cy, payload } = props;
+                const { cx, cy, payload, index } = props;
                 if (!payload.hasGame) return null;
                 return (
                   <circle
+                    key={`dot-${index}`}
                     cx={cx}
                     cy={cy}
                     r={3}
@@ -324,10 +325,11 @@ const AreaChartComponent = ({ data }) => {
                 );
               }}
               activeDot={(props) => {
-                const { cx, cy, payload } = props;
+                const { cx, cy, payload, index } = props;
                 if (!payload.hasGame) return null;
                 return (
                   <circle
+                    key={`activeDot-${index}`}
                     cx={cx}
                     cy={cy}
                     r={6}
@@ -360,10 +362,11 @@ const AreaChartComponent = ({ data }) => {
                 strokeDasharray="5 5"
                 dot={false}
                 activeDot={(props) => {
-                  const { cx, cy, payload } = props;
+                  const { cx, cy, payload, index } = props;
                   if (!payload.hasGame) return null;
                   return (
                     <circle
+                      key={`maActiveDot-${index}`}
                       cx={cx}
                       cy={cy}
                       r={4}

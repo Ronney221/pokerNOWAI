@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   getPlayerPerformanceHistory, 
   trackPlayerPerformance, 
@@ -7,12 +7,48 @@ import {
 } from './services/ledger';
 import { useAuth } from './contexts/AuthContext';
 import { toast } from 'react-toastify';
-import { format, parseISO, isValid } from 'date-fns';
-import { motion, AnimatePresence } from 'framer-motion';
-import { pageTransitionVariants, containerVariants, itemVariants } from './animations/pageTransitions';
+import { format } from 'date-fns';
+import { motion } from 'framer-motion';
 import Dashboard from './components/Dashboard';
-import ReactDOM from 'react-dom';
-import './index.css';
+import SessionHistoryTable from './components/tables/SessionHistoryTable';
+
+// Animation variants for Framer Motion
+const pageTransitionVariants = {
+  initial: { opacity: 0, y: 20 },
+  animate: { 
+    opacity: 1, 
+    y: 0,
+    transition: {
+      duration: 0.4,
+      ease: "easeOut"
+    }
+  },
+  exit: { 
+    opacity: 0,
+    y: -20,
+    transition: {
+      duration: 0.3,
+      ease: "easeIn"
+    }
+  }
+};
+
+const containerVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: {
+    opacity: 1,
+    y: 0,
+    transition: {
+      duration: 0.6,
+      staggerChildren: 0.1
+    }
+  }
+};
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 }
+};
 
 /**
  * Bankroll component that displays player performance data with CRUD functionality
@@ -37,12 +73,6 @@ const Bankroll = () => {
   const [isGlobalEditMode, setIsGlobalEditMode] = useState(false);
   const { currentUser } = useAuth();
   
-  // Chart data
-  const [chartData, setChartData] = useState(null);
-  
-  // Reference to chart container for responsiveness
-  const chartRef = useRef(null);
-
   // Add state for multiple selection
   const [selectedSessions, setSelectedSessions] = useState([]);
   const [isMultiDeleteModalOpen, setIsMultiDeleteModalOpen] = useState(false);
@@ -51,130 +81,82 @@ const Bankroll = () => {
     fetchPerformanceData();
   }, [currentUser]);
 
-  useEffect(() => {
-    if (performanceData.length > 0) {
-      prepareChartData();
-    }
-  }, [performanceData]);
+  /**
+   * Format date string to readable format
+   */
+  const formatDate = (dateString) => {
+    const date = new Date(dateString);
+    return format(date, 'MMM d, yyyy');
+  };
 
   /**
-   * Prepare data for the performance chart
+   * Format date for input fields
    */
-  const prepareChartData = () => {
-    if (!performanceData || performanceData.length === 0) {
-      return { labels: [], data: [], backgroundColor: '#36A2EB', borderColor: '#36A2EB' };
-    }
-    
-    // Sort by date (oldest to newest)
-    const sortedData = [...performanceData].sort((a, b) => new Date(a.sessionDate) - new Date(b.sessionDate));
-    
-    // Calculate running total for each entry
-    const runningTotals = [];
-    let runningTotal = 0;
-    
-    for (const item of sortedData) {
-      runningTotal += item.profit;
-      runningTotals.push({
-        id: item._id,
-        date: formatDate(item.sessionDate),
-        profit: item.profit,
-        runningTotal: runningTotal,
-        sessionName: item.sessionName || 'Unnamed Game'
-      });
-    }
-    
-    const labels = runningTotals.map(item => item.date);
-    // Always format profit in cents for consistency
-    const data = runningTotals.map(item => item.runningTotal / 100);
-    
-    // Create color points for the chart - red below 0, green above 0
-    const colorPoints = runningTotals.map(item => item.runningTotal < 0 ? '#FF6384' : '#36A2EB');
-    
-    // For the line chart, color based on final profit
-    const isFinalProfitPositive = runningTotal >= 0;
-    
+  const formatDateForInput = (dateString) => {
+    const date = new Date(dateString);
+    return format(date, 'yyyy-MM-dd');
+  };
+
+  /**
+   * Format date for storage
+   */
+  const formatDateForStorage = (dateString) => {
+    const [year, month, day] = dateString.split('-').map(Number);
+    const date = new Date(year, month - 1, day);
+    date.setHours(12, 0, 0, 0);
+    return date.toISOString();
+  };
+
+  /**
+   * Initialize new session data with default values
+   */
+  const getDefaultNewSessionData = () => {
+    const today = new Date();
+    today.setHours(12, 0, 0, 0);
     return {
-      labels,
-      data,
-      backgroundColor: colorPoints,
-      borderColor: isFinalProfitPositive ? '#36A2EB' : '#FF6384',
-      // Add running totals for tooltips
-      runningTotals
+      sessionName: '',
+      playerName: '',
+      sessionDate: format(today, 'yyyy-MM-dd'),
+      buyIn: '',
+      cashOut: '',
+      denomination: 'dollars'
     };
   };
 
   /**
-   * Calculate statistics about performance
+   * Format money value for display (always in whole dollars)
    */
-  const calculateStats = () => {
-    if (!performanceData || performanceData.length === 0) {
-      return {
-        winningStreak: [],
-        losingStreak: [],
-        biggestWin: null,
-        biggestLoss: null
-      };
-    }
-
-    let currentWinStreak = [];
-    let currentLoseStreak = [];
-    let longestWinStreak = [];
-    let longestLoseStreak = [];
-    let biggestWin = null;
-    let biggestLoss = null;
-
-    // Sort sessions by date
-    const sortedSessions = [...performanceData].sort((a, b) => 
-      new Date(a.sessionDate) - new Date(b.sessionDate)
-    );
-
-    // Calculate streaks and biggest wins/losses
-    sortedSessions.forEach(session => {
-      // Update biggest win/loss
-      if (!biggestWin || session.profit > biggestWin.profit) {
-        biggestWin = session;
-      }
-      if (!biggestLoss || session.profit < biggestLoss.profit) {
-        biggestLoss = session;
-      }
-
-      // Calculate streaks
-      if (session.profit > 0) {
-        if (currentLoseStreak.length > longestLoseStreak.length) {
-          longestLoseStreak = [...currentLoseStreak];
-        }
-        currentLoseStreak = [];
-        currentWinStreak.push(session);
-      } else if (session.profit < 0) {
-        if (currentWinStreak.length > longestWinStreak.length) {
-          longestWinStreak = [...currentWinStreak];
-        }
-        currentWinStreak = [];
-        currentLoseStreak.push(session);
-      }
-    });
-
-    // Check final streaks
-    if (currentWinStreak.length > longestWinStreak.length) {
-      longestWinStreak = currentWinStreak;
-    }
-    if (currentLoseStreak.length > longestLoseStreak.length) {
-      longestLoseStreak = currentLoseStreak;
-    }
-
-    return {
-      winningStreak: longestWinStreak,
-      losingStreak: longestLoseStreak,
-      biggestWin,
-      biggestLoss
-    };
+  const formatMoney = (amount) => {
+    return (amount / 100).toFixed(2);
   };
 
   /**
-   * Calculate total profit for a streak
+   * Convert display dollars to storage cents
    */
-  const calculateStreakProfit = (sessions) => {
-    return sessions.reduce((total, session) => total + session.profit, 0);
+  const displayDollarsToCents = (dollars) => {
+    if (!dollars) return 0;
+    return Math.round(parseFloat(dollars)) * 100;
+  };
+
+  /**
+   * Calculate total profit/loss
+   */
+  const calculateTotalProfit = () => {
+    return performanceData.reduce((total, session) => total + session.profit, 0);
+  };
+
+  /**
+   * Calculate total buy-in
+   */
+  const calculateTotalBuyIn = () => {
+    return performanceData.reduce((total, session) => total + session.buyIn, 0);
+  };
+
+  /**
+   * Calculate total cash-out
+   */
+  const calculateTotalCashOut = () => {
+    return performanceData.reduce((total, session) => total + session.cashOut, 0);
   };
 
   /**
@@ -201,7 +183,6 @@ const Bankroll = () => {
         }
         
         // If dates are the same, sort by createdAt (most recent first)
-        // Use timestamps for comparison, defaulting to 0 if createdAt doesn't exist
         const timeA = a.createdAt ? new Date(a.createdAt).getTime() : 0;
         const timeB = b.createdAt ? new Date(b.createdAt).getTime() : 0;
         return timeB - timeA;
@@ -218,98 +199,12 @@ const Bankroll = () => {
   };
 
   /**
-   * Format date string to readable format
-   */
-  const formatDate = (dateString) => {
-    // Create a date object and keep it in local timezone
-    const date = new Date(dateString);
-    return format(date, 'MMM d, yyyy');
-  };
-
-  /**
-   * Format date for input fields
-   */
-  const formatDateForInput = (dateString) => {
-    // Create a date object and keep it in local timezone
-    const date = new Date(dateString);
-    return format(date, 'yyyy-MM-dd');
-  };
-
-  /**
-   * Format date for storage
-   */
-  const formatDateForStorage = (dateString) => {
-    // Create a date object in local timezone
-    const [year, month, day] = dateString.split('-').map(Number);
-    const date = new Date(year, month - 1, day);
-    // Set the time to noon to avoid any timezone issues
-    date.setHours(12, 0, 0, 0);
-    return date.toISOString();
-  };
-
-  /**
-   * Initialize new session data with default values
-   */
-  const getDefaultNewSessionData = () => {
-    const today = new Date();
-    today.setHours(12, 0, 0, 0); // Set to noon to avoid timezone issues
-    return {
-      sessionName: '',
-      playerName: '',
-      sessionDate: format(today, 'yyyy-MM-dd'),
-      buyIn: '',
-      cashOut: '',
-      denomination: 'dollars'
-    };
-  };
-
-  /**
-   * Format money value for display (always in whole dollars)
-   */
-  const formatMoney = (amount) => {
-    // Convert cents to dollars and format to two decimal places
-    return (amount / 100).toFixed(2);
-  };
-
-  /**
-   * Convert display dollars to storage cents
-   */
-  const displayDollarsToCents = (dollars) => {
-    if (!dollars) return 0;
-    // Convert dollars (float/string) to cents (integer) for storage
-    // Round to whole dollars (no cents)
-    return Math.round(parseFloat(dollars)) * 100;
-  };
-
-  /**
-   * Calculate total profit/loss
-   */
-  const calculateTotalProfit = () => {
-    return performanceData.reduce((total, session) => total + session.profit, 0);
-  };
-
-  /**
-   * Calculate total buy-in
-   */
-  const calculateTotalBuyIn = () => {
-    return performanceData.reduce((total, session) => total + session.buyIn, 0);
-  };
-
-  /**
-   * Calculate total cash-out
-   */
-  const calculateTotalCashOut = () => {
-    return performanceData.reduce((total, session) => total + session.cashOut, 0);
-  };
-
-  /**
    * Handle input change for editable row
    */
   const handleEditInputChange = (e) => {
     const { name, value } = e.target;
     let parsedValue = value;
     
-    // Parse numeric values
     if (name === 'buyIn' || name === 'cashOut') {
       parsedValue = parseFloat(value) || 0;
     }
@@ -327,7 +222,6 @@ const Bankroll = () => {
     const { name, value } = e.target;
     let parsedValue = value;
     
-    // Parse numeric values
     if (name === 'buyIn' || name === 'cashOut') {
       parsedValue = parseFloat(value) || 0;
     }
@@ -342,7 +236,6 @@ const Bankroll = () => {
    * Handle clicking on a session to edit
    */
   const handleEditClick = (session) => {
-    // Don't allow editing if already editing another row
     if (editingRow) {
       toast.info('Please finish current edit before starting another');
       return;
@@ -350,10 +243,7 @@ const Bankroll = () => {
     
     setEditingRow(session._id);
     
-    // Convert date format for the input field
     const formattedDate = formatDateForInput(session.sessionDate);
-    
-    // Display values in dollars (no longer need to convert based on denomination)
     const displayBuyIn = formatMoney(session.buyIn);
     const displayCashOut = formatMoney(session.cashOut);
     
@@ -392,14 +282,9 @@ const Bankroll = () => {
       
       setLoading(true);
       
-      // Format date for storage
       const storedDate = formatDateForStorage(editFormData.sessionDate);
-      
-      // Process monetary values correctly - keeping in whole dollars
       const buyIn = displayDollarsToCents(parseFloat(editFormData.buyIn) || 0);
       const cashOut = displayDollarsToCents(parseFloat(editFormData.cashOut) || 0);
-      
-      // Calculate profit (in cents)
       const profit = cashOut - buyIn;
       
       const updatedData = {
@@ -409,12 +294,11 @@ const Bankroll = () => {
         buyIn: buyIn,
         cashOut: cashOut,
         profit: profit,
-        denomination: 'dollars' // Always dollars
+        denomination: 'dollars'
       };
       
       await updatePlayerPerformance(performanceId, updatedData);
       
-      // Update local state to reflect changes
       setPerformanceData(prevData => 
         prevData.map(item => 
           item._id === performanceId 
@@ -465,17 +349,14 @@ const Bankroll = () => {
     try {
       setLoading(true);
       
-      // Delete each selected session
       for (const performanceId of selectedSessions) {
         await deletePlayerPerformance(performanceId);
       }
       
-      // Remove deleted sessions from state
       setPerformanceData(prevData => 
         prevData.filter(item => !selectedSessions.includes(item._id))
       );
       
-      // Clear selection
       setSelectedSessions([]);
       setIsMultiDeleteModalOpen(false);
       
@@ -498,7 +379,6 @@ const Bankroll = () => {
       setLoading(true);
       await deletePlayerPerformance(performanceToDelete._id);
       
-      // Remove deleted session from state
       setPerformanceData(prevData => 
         prevData.filter(item => item._id !== performanceToDelete._id)
       );
@@ -507,10 +387,6 @@ const Bankroll = () => {
       setPerformanceToDelete(null);
       
       toast.success('Session deleted successfully');
-      
-      // Don't exit edit mode after deletion
-      // This line was previously here, but we're removing it
-      // setIsGlobalEditMode(false);
     } catch (error) {
       console.error('Error deleting session:', error);
       toast.error('Failed to delete session');
@@ -544,17 +420,11 @@ const Bankroll = () => {
       
       setLoading(true);
       
-      // Format date for storage (to avoid timezone issues)
       const storedDate = formatDateForStorage(newSessionData.sessionDate);
-      
-      // Process monetary values to store as cents (whole dollars * 100)
       const buyIn = displayDollarsToCents(parseFloat(newSessionData.buyIn) || 0);
       const cashOut = displayDollarsToCents(parseFloat(newSessionData.cashOut) || 0);
-      
-      // Calculate profit
       const profit = cashOut - buyIn;
       
-      // Create performance data object for API
       const performanceData = {
         firebaseUid: currentUser.uid,
         sessionName: newSessionData.sessionName,
@@ -565,19 +435,14 @@ const Bankroll = () => {
         profit,
         isManualEntry: true,
         denomination: 'dollars',
-        createdAt: new Date().toISOString() // Add creation timestamp
+        createdAt: new Date().toISOString()
       };
       
-      // Call API to add session
       await trackPlayerPerformance(performanceData);
       
       toast.success('Session added successfully');
       setIsAddModalOpen(false);
-      
-      // Reset form data
       setNewSessionData(getDefaultNewSessionData());
-      
-      // Refresh performance data
       await fetchPerformanceData();
     } catch (error) {
       console.error('Error adding session:', error);
@@ -876,180 +741,25 @@ const Bankroll = () => {
                   </div>
                 )}
 
-                <div className="overflow-x-auto overflow-y-visible">
-                  <div className="min-w-full inline-block align-middle">
-                    <div className="overflow-hidden">
-                  <table className="table w-full">
-                    <thead>
-                          <tr className="bg-base-200/50">
-                        {isGlobalEditMode && (
-                              <th className="w-16">
-                            <label>
-                              <input
-                                type="checkbox"
-                                className="checkbox"
-                                checked={selectedSessions.length === performanceData.length}
-                                onChange={(e) => {
-                                  if (e.target.checked) {
-                                    setSelectedSessions(performanceData.map(item => item._id));
-                                  } else {
-                                    setSelectedSessions([]);
-                                  }
-                                }}
-                              />
-                            </label>
-                          </th>
-                        )}
-                        <th>Date</th>
-                        <th>Session</th>
-                        <th>Player</th>
-                            <th className="text-right">Buy-in</th>
-                            <th className="text-right">Cash-out</th>
-                            <th className="text-right">Profit/Loss</th>
-                            {isGlobalEditMode && <th className="w-24">Actions</th>}
-                      </tr>
-                    </thead>
-                    <tbody>
-                          {performanceData.map(session => (
-                            <motion.tr 
-                              key={session._id} 
-                              className={`hover:bg-base-200/50 transition-colors ${editingRow === session._id ? 'bg-base-200/70' : ''}`}
-                              initial={{ opacity: 0, y: 20 }}
-                              animate={{ opacity: 1, y: 0 }}
-                              whileHover={{ scale: 1.01 }}
-                              transition={{ duration: 0.2 }}
-                            >
-                              {isGlobalEditMode && (
-                                <td>
-                                  <label>
-                                    <input
-                                      type="checkbox"
-                                      className="checkbox"
-                                      checked={selectedSessions.includes(session._id)}
-                                      onChange={() => handleSessionSelect(session._id)}
-                                    />
-                                  </label>
-                                </td>
-                              )}
-                              <td className="font-medium">
-                                {editingRow === session._id ? (
-                            <input
-                              type="date"
-                              name="sessionDate"
-                              value={editFormData.sessionDate}
-                              onChange={handleEditInputChange}
-                                    className="input input-bordered input-sm w-full"
-                            />
-                                ) : formatDate(session.sessionDate)}
-                          </td>
-                          <td>
-                                {editingRow === session._id ? (
-                            <input
-                              type="text"
-                              name="sessionName"
-                              value={editFormData.sessionName}
-                              onChange={handleEditInputChange}
-                                    className="input input-bordered input-sm w-full"
-                                    placeholder="Enter session name"
-                            />
-                                ) : (session.sessionName || 'Unnamed Game')}
-                          </td>
-                          <td>
-                                {editingRow === session._id ? (
-                            <input
-                              type="text"
-                              name="playerName"
-                              value={editFormData.playerName}
-                              onChange={handleEditInputChange}
-                                    className="input input-bordered input-sm w-full"
-                                    placeholder="Enter player name"
-                            />
-                                ) : session.playerName}
-                          </td>
-                              <td className="text-right">
-                                {editingRow === session._id ? (
-                            <input
-                              type="number"
-                              name="buyIn"
-                              value={editFormData.buyIn}
-                              onChange={handleEditInputChange}
-                                    className="input input-bordered input-sm w-full text-right"
-                                    step="1"
-                              min="0"
-                            />
-                                ) : `$${formatMoney(session.buyIn)}`}
-                          </td>
-                              <td className="text-right">
-                                {editingRow === session._id ? (
-                            <input
-                              type="number"
-                              name="cashOut"
-                              value={editFormData.cashOut}
-                              onChange={handleEditInputChange}
-                                    className="input input-bordered input-sm w-full text-right"
-                                    step="1"
-                              min="0"
-                            />
-                                ) : `$${formatMoney(session.cashOut)}`}
-                          </td>
-                              <td className={`text-right font-semibold ${session.profit >= 0 ? 'text-success' : 'text-error'}`}>
-                                ${formatMoney(session.profit)}
-                          </td>
-                              {isGlobalEditMode && !editingRow && (
-                                <td>
-                                  <div className="flex gap-2 justify-end">
-                              <button 
-                                className="btn btn-ghost btn-xs"
-                                      onClick={() => handleEditClick(session)}
-                              >
-                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                      </svg>
-                              </button>
-                            </div>
-                            </td>
-                          )}
-                              {editingRow === session._id && (
-                                <td>
-                                  <div className="flex gap-2 justify-end">
-                              <button
-                                      className="btn btn-ghost btn-xs"
-                                      onClick={handleCancelEdit}
-                              >
-                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-error" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
-                                      </svg>
-                              </button>
-                                    <button
-                                      className="btn btn-ghost btn-xs"
-                                      onClick={() => handleSaveEdit(session._id)}
-                                    >
-                                      <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-success" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
-                                      </svg>
-                                    </button>
-                                  </div>
-                            </td>
-                          )}
-                            </motion.tr>
-                      ))}
-                        </tbody>
-                        <tfoot className="border-t-2 border-base-200">
-                      <tr className="font-bold">
-                        {isGlobalEditMode && <td></td>}
-                        <td colSpan={3}>Totals</td>
-                            <td className="text-right">${formatMoney(calculateTotalBuyIn())}</td>
-                            <td className="text-right">${formatMoney(calculateTotalCashOut())}</td>
-                            <td className={`text-right ${calculateTotalProfit() >= 0 ? 'text-success' : 'text-error'}`}>
-                          ${formatMoney(calculateTotalProfit())}
-                        </td>
-                        {isGlobalEditMode && <td></td>}
-                      </tr>
-                        </tfoot>
-                  </table>
-                </div>
-                  </div>
-                </div>
+                {/* Session History Table */}
+                <SessionHistoryTable
+                  performanceData={performanceData}
+                  isGlobalEditMode={isGlobalEditMode}
+                  selectedSessions={selectedSessions}
+                  editingRow={editingRow}
+                  editFormData={editFormData}
+                  formatDate={formatDate}
+                  formatMoney={formatMoney}
+                  handleSessionSelect={handleSessionSelect}
+                  handleEditInputChange={handleEditInputChange}
+                  handleEditClick={handleEditClick}
+                  handleCancelEdit={handleCancelEdit}
+                  handleSaveEdit={handleSaveEdit}
+                  calculateTotalBuyIn={calculateTotalBuyIn}
+                  calculateTotalCashOut={calculateTotalCashOut}
+                  calculateTotalProfit={calculateTotalProfit}
+                  setSelectedSessions={setSelectedSessions}
+                />
               </div>
             </motion.div>
           ) : (
