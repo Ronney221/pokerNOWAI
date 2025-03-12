@@ -11,6 +11,8 @@ import { format } from 'date-fns';
 import { motion } from 'framer-motion';
 import Dashboard from './components/Dashboard';
 import SessionHistoryTable from './components/tables/SessionHistoryTable';
+import generateDemoData from './utils/demoData';
+import { handlePageChange } from './utils/navigation';
 
 // Animation variants for Framer Motion
 const pageTransitionVariants = {
@@ -53,7 +55,7 @@ const itemVariants = {
 /**
  * Bankroll component that displays player performance data with CRUD functionality
  */
-const Bankroll = () => {
+const Bankroll = ({ setCurrentPage }) => {
   const [performanceData, setPerformanceData] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -78,7 +80,14 @@ const Bankroll = () => {
   const [isMultiDeleteModalOpen, setIsMultiDeleteModalOpen] = useState(false);
 
   useEffect(() => {
-    fetchPerformanceData();
+    if (!currentUser) {
+      // Load demo data for non-logged-in users
+      const demoData = generateDemoData();
+      setPerformanceData(demoData);
+      setLoading(false);
+    } else {
+      fetchPerformanceData();
+    }
   }, [currentUser]);
 
   /**
@@ -468,6 +477,13 @@ const Bankroll = () => {
   };
 
   /**
+   * Handle navigation
+   */
+  const handleNavigation = (page) => {
+    handlePageChange(page, setCurrentPage);
+  };
+
+  /**
    * Renders the loading state
    */
   if (loading) {
@@ -494,11 +510,155 @@ const Bankroll = () => {
         animate="animate"
         exit="exit"
         variants={pageTransitionVariants}
-        className="min-h-screen bg-gradient-to-b from-base-100 via-base-100/50 to-base-200/30 flex items-center justify-center"
+        className="min-h-screen bg-gradient-to-b from-base-100 via-base-100/50 to-base-200/30"
       >
-        <div className="text-center">
-          <h2 className="text-2xl font-bold mb-4">Performance Tracking</h2>
-          <p className="mb-4">Please sign in to view your performance history.</p>
+        {/* Regular dashboard content */}
+        <div className="container mx-auto px-4 pt-32 pb-32 relative z-10">
+          <motion.div
+            variants={containerVariants}
+            initial="hidden"
+            animate="visible"
+          >
+            {/* Hero Section with Stats */}
+            <div className="mb-12">
+              <motion.div 
+                className="text-center mb-8"
+                initial={{ opacity: 0, y: -20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.6 }}
+              >
+                <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                  Track Your Poker Journey
+                </h1>
+                <p className="text-lg opacity-80 max-w-2xl mx-auto mb-8">
+                  👋 You're viewing demo data. Sign in to track your own poker sessions!
+                </p>
+                <button 
+                  className="btn btn-primary btn-lg"
+                  onClick={() => handleNavigation('login')}
+                >
+                  Get Started
+                </button>
+              </motion.div>
+            
+              {/* Stats Cards */}
+              <motion.div 
+                variants={containerVariants}
+                className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
+              >
+                <motion.div 
+                  variants={itemVariants} 
+                  className="card bg-base-100/90 shadow-xl backdrop-blur-sm border border-base-200 hover:border-primary/50 transition-all duration-300"
+                  whileHover={{ y: -5 }}
+                >
+                <div className="card-body">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-medium opacity-70">Total Buy In</h3>
+                        <p className="text-2xl font-bold">${formatMoney(calculateTotalBuyIn())}</p>
+                      </div>
+                    </div>
+                </div>
+              </motion.div>
+              
+                <motion.div 
+                  variants={itemVariants} 
+                  className="card bg-base-100/90 shadow-xl backdrop-blur-sm border border-base-200 hover:border-secondary/50 transition-all duration-300"
+                  whileHover={{ y: -5 }}
+                >
+                <div className="card-body">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 9V7a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2m2 4h10a2 2 0 002-2v-6a2 2 0 00-2-2H9a2 2 0 00-2 2v6a2 2 0 002 2zm7-5a2 2 0 11-4 0 2 2 0 014 0z" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-medium opacity-70">Total Cash Out</h3>
+                        <p className="text-2xl font-bold">${formatMoney(calculateTotalCashOut())}</p>
+                      </div>
+                    </div>
+                </div>
+              </motion.div>
+              
+                <motion.div 
+                  variants={itemVariants} 
+                  className="card bg-base-100/90 shadow-xl backdrop-blur-sm border border-base-200 hover:border-accent/50 transition-all duration-300"
+                  whileHover={{ y: -5 }}
+                >
+                <div className="card-body">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                        </svg>
+                      </div>
+                      <div>
+                        <h3 className="text-sm font-medium opacity-70">Current Bankroll</h3>
+                        <p className={`text-2xl font-bold ${calculateTotalProfit() >= 0 ? 'text-success' : 'text-error'}`}>
+                  ${formatMoney(calculateTotalProfit())}
+                </p>
+                      </div>
+                    </div>
+                </div>
+              </motion.div>
+            </motion.div>
+            </div>
+
+            {/* Performance Chart Section */}
+            {performanceData.length > 0 && (
+              <motion.div 
+                variants={itemVariants}
+                className="card bg-base-100/90 shadow-xl backdrop-blur-sm border border-base-200 mb-8 overflow-hidden"
+              >
+                <div className="card-body p-6">
+                  <div className="w-full" style={{ minHeight: "600px" }}>
+                    {displayChart()}
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* Session History Section */}
+            <motion.div 
+              variants={itemVariants}
+              className="card bg-base-100/90 shadow-xl backdrop-blur-sm border border-base-200"
+            >
+              <div className="card-body p-6">
+                <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                  Session History
+                </h2>
+
+                {/* Session History Table */}
+                <SessionHistoryTable
+                  performanceData={performanceData}
+                  isGlobalEditMode={false}
+                  selectedSessions={[]}
+                  editingRow={null}
+                  editFormData={{}}
+                  formatDate={formatDate}
+                  formatMoney={formatMoney}
+                  handleSessionSelect={() => {}}
+                  handleEditInputChange={() => {}}
+                  handleEditClick={() => {}}
+                  handleCancelEdit={() => {}}
+                  handleSaveEdit={() => {}}
+                  calculateTotalBuyIn={calculateTotalBuyIn}
+                  calculateTotalCashOut={calculateTotalCashOut}
+                  calculateTotalProfit={calculateTotalProfit}
+                  setSelectedSessions={() => {}}
+                />
+              </div>
+            </motion.div>
+          </motion.div>
         </div>
       </motion.div>
     );

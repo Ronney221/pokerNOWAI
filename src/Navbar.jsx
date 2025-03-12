@@ -14,8 +14,8 @@ import {
 const PROTECTED_ROUTES = {
   fullLogUpload: true,
   analytics: true,
-  'saved-ledgers': true,
-  bankroll: true,
+  'saved-ledgers': false,
+  bankroll: false,
   ledger: false
 };
 

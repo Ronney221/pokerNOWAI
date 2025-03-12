@@ -182,15 +182,6 @@ const Login = ({ setCurrentPage }) => {
                 </div>
               </div>
 
-              <div className="text-right">
-                <button 
-                  onClick={() => setIsForgotPasswordOpen(true)} 
-                  className="text-sm text-primary hover:underline"
-                >
-                  Forgot password?
-                </button>
-              </div>
-
               <div className="relative my-6 text-center">
                 <div className="absolute inset-0 flex items-center">
                   <div className="w-full border-t border-base-300"></div>
@@ -251,7 +242,7 @@ const Login = ({ setCurrentPage }) => {
           </div>
         </div>
 
-        <div className="mt-8 text-center">
+        <div className="mt-8 text-center space-y-4">
           <p className="text-base-content/70">
             Don't have an account?{' '}
             <span
@@ -260,6 +251,14 @@ const Login = ({ setCurrentPage }) => {
             >
               Sign Up
             </span>
+          </p>
+          <p>
+            <button 
+              onClick={() => setIsForgotPasswordOpen(true)} 
+              className="text-sm text-primary hover:underline"
+            >
+              Forgot password?
+            </button>
           </p>
         </div>
       </div>

@@ -102,7 +102,7 @@ function App() {
       content = <SharedLedger ledgerId={sharedLedgerId} setCurrentPage={setCurrentPage} />;
       break;
     case "bankroll":
-      content = <Bankroll />;
+      content = <Bankroll setCurrentPage={setCurrentPage} />;
       break;
     case "fullLogUpload":
       content = <FullLogUpload />;
