@@ -274,7 +274,7 @@ const HistogramChart = ({ data }) => {
             />
             
             <Bar
-              name="Session Count"
+              name="Poker Sessions"
               dataKey="count"
               className="cursor-pointer"
               style={{ cursor: 'pointer' }}

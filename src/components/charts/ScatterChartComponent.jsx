@@ -199,7 +199,7 @@ const ScatterChartComponent = ({ data }) => {
             )}
 
             <Scatter
-              name="Sessions"
+              name="Poker Sessions"
               data={chartData}
               shape={(props) => {
                 const { cx, cy } = props;

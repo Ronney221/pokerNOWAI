@@ -1,205 +1,265 @@
 import React, { useMemo } from 'react';
 import { format } from 'date-fns';
+import { motion } from 'framer-motion';
+
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 }
+};
 
 const AnalyticsPanel = ({ data }) => {
-  const stats = useMemo(() => {
-    if (!data || data.length === 0) return null;
+  // Helper function to format money
+  const formatMoney = (amount) => {
+    return (amount / 100).toFixed(2);
+  };
 
-    // Convert amounts to dollars
-    const sessions = data.map(session => ({
-      ...session,
-      profit: session.profit / 100,
-      buyIn: session.buyIn / 100,
-      cashOut: session.cashOut / 100,
-      date: new Date(session.sessionDate)
-    }));
+  // Helper function to format date
+  const formatDate = (date) => {
+    return format(new Date(date), 'MMM d, yyyy');
+  };
+
+  // Helper function to calculate streak profit
+  const calculateStreakProfit = (streak) => {
+    return streak.reduce((acc, session) => acc + session.profit, 0);
+  };
+
+  // Calculate statistics including streaks
+  const calculateStats = () => {
+    if (!data || data.length === 0) return {
+      winningStreak: [],
+      losingStreak: [],
+      biggestWin: null,
+      biggestLoss: null
+    };
+
+    let currentWinStreak = [];
+    let currentLossStreak = [];
+    let longestWinStreak = [];
+    let longestLossStreak = [];
+    let biggestWin = null;
+    let biggestLoss = null;
 
     // Sort sessions by date
-    const sortedSessions = [...sessions].sort((a, b) => a.date - b.date);
-
-    // Calculate streaks and performance metrics
-    let currentWinStreak = 0;
-    let currentLossStreak = 0;
-    let maxWinStreak = 0;
-    let maxLossStreak = 0;
-    let bestWinStreak = { count: 0, profit: 0, sessions: [] };
-    let worstLossStreak = { count: 0, profit: 0, sessions: [] };
-
-    // Track current streaks
-    let tempWinStreak = { count: 0, profit: 0, sessions: [] };
-    let tempLossStreak = { count: 0, profit: 0, sessions: [] };
+    const sortedSessions = [...data].sort((a, b) => 
+      new Date(a.sessionDate) - new Date(b.sessionDate)
+    );
 
     sortedSessions.forEach(session => {
+      // Track biggest win/loss
+      if (!biggestWin || session.profit > biggestWin.profit) {
+        biggestWin = session;
+      }
+      if (!biggestLoss || session.profit < biggestLoss.profit) {
+        biggestLoss = session;
+      }
+
+      // Track streaks
       if (session.profit > 0) {
-        // Handle win
-        currentWinStreak++;
-        currentLossStreak = 0;
-        maxWinStreak = Math.max(maxWinStreak, currentWinStreak);
-
-        // Update temp win streak
-        tempWinStreak.count++;
-        tempWinStreak.profit += session.profit;
-        tempWinStreak.sessions.push(session);
-
-        // Reset temp loss streak
-        tempLossStreak = { count: 0, profit: 0, sessions: [] };
-
-        // Update best win streak if better
-        if (tempWinStreak.profit > bestWinStreak.profit) {
-          bestWinStreak = { ...tempWinStreak };
+        currentWinStreak.push(session);
+        if (currentLossStreak.length > longestLossStreak.length) {
+          longestLossStreak = [...currentLossStreak];
         }
+        currentLossStreak = [];
       } else if (session.profit < 0) {
-        // Handle loss
-        currentLossStreak++;
-        currentWinStreak = 0;
-        maxLossStreak = Math.max(maxLossStreak, currentLossStreak);
-
-        // Update temp loss streak
-        tempLossStreak.count++;
-        tempLossStreak.profit += session.profit;
-        tempLossStreak.sessions.push(session);
-
-        // Reset temp win streak
-        tempWinStreak = { count: 0, profit: 0, sessions: [] };
-
-        // Update worst loss streak if worse
-        if (tempLossStreak.profit < worstLossStreak.profit) {
-          worstLossStreak = { ...tempLossStreak };
+        currentLossStreak.push(session);
+        if (currentWinStreak.length > longestWinStreak.length) {
+          longestWinStreak = [...currentWinStreak];
         }
-      } else {
-        // Handle break-even (reset both streaks)
-        currentWinStreak = 0;
-        currentLossStreak = 0;
-        tempWinStreak = { count: 0, profit: 0, sessions: [] };
-        tempLossStreak = { count: 0, profit: 0, sessions: [] };
+        currentWinStreak = [];
       }
     });
 
-    // Calculate win rate and other metrics
-    const winCount = sessions.filter(s => s.profit > 0).length;
-    const lossCount = sessions.filter(s => s.profit < 0).length;
-    const breakEvenCount = sessions.filter(s => s.profit === 0).length;
-    const winRate = (winCount / sessions.length) * 100;
-
-    // Find biggest win and loss
-    const biggestWin = sessions.reduce((max, session) => 
-      session.profit > max.profit ? session : max
-    , { profit: -Infinity });
-
-    const biggestLoss = sessions.reduce((min, session) => 
-      session.profit < min.profit ? session : min
-    , { profit: Infinity });
-
-    // Calculate average win and loss
-    const wins = sessions.filter(s => s.profit > 0);
-    const losses = sessions.filter(s => s.profit < 0);
-    const avgWin = wins.reduce((sum, s) => sum + s.profit, 0) / wins.length;
-    const avgLoss = losses.reduce((sum, s) => sum + s.profit, 0) / losses.length;
+    // Check final streaks
+    if (currentWinStreak.length > longestWinStreak.length) {
+      longestWinStreak = currentWinStreak;
+    }
+    if (currentLossStreak.length > longestLossStreak.length) {
+      longestLossStreak = currentLossStreak;
+    }
 
     return {
-      totalSessions: sessions.length,
-      winCount,
-      lossCount,
-      breakEvenCount,
-      winRate,
-      maxWinStreak,
-      maxLossStreak,
-      bestWinStreak,
-      worstLossStreak,
+      winningStreak: longestWinStreak,
+      losingStreak: longestLossStreak,
       biggestWin,
-      biggestLoss,
-      avgWin,
-      avgLoss
+      biggestLoss
     };
-  }, [data]);
-
-  if (!stats) return null;
+  };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-      {/* Win Streaks Card */}
-      <div className="card bg-base-100 shadow-xl">
-        <div className="card-body">
-          <h3 className="card-title text-lg mb-4">Winning Streaks</h3>
-          <div className="space-y-4">
-            <div>
-              <p className="text-sm font-medium mb-1">Longest Win Streak</p>
-              <p className="text-2xl font-bold text-success">
-                {stats.maxWinStreak} Sessions
-              </p>
-            </div>
-            <div>
-              <p className="text-sm font-medium mb-1">Most Profitable Streak</p>
-              <p className="text-2xl font-bold text-success">
-                ${stats.bestWinStreak.profit.toFixed(2)}
-              </p>
-              <p className="text-xs text-base-content/60">
-                {stats.bestWinStreak.count} sessions
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
+    <>
+      {data.length > 0 && (
+        <motion.div 
+          variants={itemVariants}
+          className="mt-8 grid grid-cols-1 md:grid-cols-2 gap-6"
+        >
+          {/* Winning Streaks Card */}
+          <motion.div 
+            className="card bg-base-100/90 shadow-xl backdrop-blur-sm border border-base-200"
+            whileHover={{ y: -5 }}
+          >
+            <div className="card-body">
+              <h3 className="text-xl font-bold flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-full bg-success/5 flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-success/80" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+                  </svg>
+                </div>
+                Winning Streaks
+              </h3>
+              
+              <div className="space-y-6">
+                {/* Longest Win Streak */}
+                <div className="bg-base-200/50 rounded-xl p-4">
+                  <div className="text-sm text-base-content/70 mb-2">Longest Win Streak</div>
+                  {calculateStats().winningStreak.length > 0 ? (
+                    <>
+                      <div className="text-2xl font-bold text-success mb-2">
+                        {calculateStats().winningStreak.length} Sessions 🔥
+                      </div>
+                      <div className="text-sm opacity-70">
+                        {formatDate(calculateStats().winningStreak[0].sessionDate)} - {formatDate(calculateStats().winningStreak[calculateStats().winningStreak.length - 1].sessionDate)}
+                      </div>
+                      <div className="text-success font-semibold mt-2 opacity-90">
+                        Total Profit: ${formatMoney(calculateStreakProfit(calculateStats().winningStreak))} 💰
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-base opacity-70">No winning streak yet 🎲</div>
+                  )}
+                </div>
 
-      {/* Recovery Opportunities Card */}
-      <div className="card bg-base-100 shadow-xl">
-        <div className="card-body">
-          <h3 className="card-title text-lg mb-4">Recovery Opportunities</h3>
-          <div className="space-y-4">
-            <div>
-              <p className="text-sm font-medium mb-1">Longest Loss Streak</p>
-              <p className="text-2xl font-bold text-error">
-                {stats.maxLossStreak} Sessions
-              </p>
-            </div>
-            <div>
-              <p className="text-sm font-medium mb-1">Biggest Drawdown</p>
-              <p className="text-2xl font-bold text-error">
-                ${Math.abs(stats.worstLossStreak.profit).toFixed(2)}
-              </p>
-              <p className="text-xs text-base-content/60">
-                {stats.worstLossStreak.count} sessions
-              </p>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Performance Insights Card */}
-      <div className="card bg-base-100 shadow-xl">
-        <div className="card-body">
-          <h3 className="card-title text-lg mb-4">Performance Insights</h3>
-          <div className="space-y-4">
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <p className="text-sm font-medium mb-1">Win Rate</p>
-                <p className="text-2xl font-bold">
-                  {stats.winRate.toFixed(1)}%
-                </p>
-              </div>
-              <div>
-                <p className="text-sm font-medium mb-1">Total Sessions</p>
-                <p className="text-2xl font-bold">
-                  {stats.totalSessions}
-                </p>
+                {/* Biggest Single Win */}
+                <div className="bg-base-200/50 rounded-xl p-4">
+                  <div className="text-sm text-base-content/70 mb-2">Biggest Single Win</div>
+                  {calculateStats().biggestWin ? (
+                    <>
+                      <div className="text-2xl font-bold text-success/90 mb-2">
+                        ${formatMoney(calculateStats().biggestWin.profit)} 🎯
+                      </div>
+                      <div className="text-sm opacity-70">
+                        {calculateStats().biggestWin.sessionName || 'Unnamed Game'}
+                      </div>
+                      <div className="text-sm opacity-70">
+                        {formatDate(calculateStats().biggestWin.sessionDate)}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-base opacity-70">No wins recorded yet 🎲</div>
+                  )}
+                </div>
               </div>
             </div>
-            <div>
-              <p className="text-sm font-medium mb-1">Average Win</p>
-              <p className="text-lg font-semibold text-success">
-                ${stats.avgWin.toFixed(2)}
-              </p>
+          </motion.div>
+
+          {/* Losing Streaks Card */}
+          <motion.div 
+            className="card bg-base-100/90 shadow-xl backdrop-blur-sm border border-base-200"
+            whileHover={{ y: -5 }}
+          >
+            <div className="card-body">
+              <h3 className="text-xl font-bold flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-full bg-error/5 flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-error/80" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 17h8m0 0v-8m0 8l-8-8-4 4-6-6" />
+                  </svg>
+                </div>
+                Unlucky Streaks
+              </h3>
+              
+              <div className="space-y-6">
+                {/* Longest Losing Streak */}
+                <div className="bg-base-200/50 rounded-xl p-4">
+                  <div className="text-sm text-base-content/70 mb-2">Longest Downswing</div>
+                  {calculateStats().losingStreak.length > 0 ? (
+                    <>
+                      <div className="text-2xl font-bold text-error/80 mb-2">
+                        {calculateStats().losingStreak.length} Sessions 📉
+                      </div>
+                      <div className="text-sm opacity-70">
+                        {formatDate(calculateStats().losingStreak[0].sessionDate)} - {formatDate(calculateStats().losingStreak[calculateStats().losingStreak.length - 1].sessionDate)}
+                      </div>
+                      <div className="text-error/90 font-semibold mt-2">
+                        Total Loss: ${formatMoney(Math.abs(calculateStreakProfit(calculateStats().losingStreak)))} 🥶
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-base opacity-70">No losing streak yet! 🍀</div>
+                  )}
+                </div>
+
+                {/* Biggest Single Loss */}
+                <div className="bg-base-200/50 rounded-xl p-4">
+                  <div className="text-sm text-base-content/70 mb-2">Biggest Single Loss</div>
+                  {calculateStats().biggestLoss ? (
+                    <>
+                      <div className="text-2xl font-bold text-error/80 mb-2">
+                        ${formatMoney(Math.abs(calculateStats().biggestLoss.profit))} 😅
+                      </div>
+                      <div className="text-sm opacity-70">
+                        {calculateStats().biggestLoss.sessionName || 'Unnamed Game'}
+                      </div>
+                      <div className="text-sm opacity-70">
+                        {formatDate(calculateStats().biggestLoss.sessionDate)}
+                      </div>
+                    </>
+                  ) : (
+                    <div className="text-base opacity-70">No losses yet! 🎰</div>
+                  )}
+                </div>
+              </div>
             </div>
-            <div>
-              <p className="text-sm font-medium mb-1">Average Loss</p>
-              <p className="text-lg font-semibold text-error">
-                ${Math.abs(stats.avgLoss).toFixed(2)}
-              </p>
+          </motion.div>
+
+          {/* Additional Statistics Card */}
+          <motion.div 
+            className="card bg-base-100/90 shadow-xl backdrop-blur-sm border border-base-200 md:col-span-2"
+            whileHover={{ y: -5 }}
+          >
+            <div className="card-body">
+              <h3 className="text-xl font-bold flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                </div>
+                Performance Insights
+              </h3>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                {/* Win Rate */}
+                <div className="bg-base-200/50 rounded-xl p-4">
+                  <div className="text-sm text-base-content/70 mb-2">Win Rate</div>
+                  <div className="text-2xl font-bold">
+                    {Math.round((data.filter(session => session.profit > 0).length / data.length) * 100)}%
+                  </div>
+                  <div className="text-sm opacity-70">
+                    {data.filter(session => session.profit > 0).length} winning sessions
+                  </div>
+                </div>
+
+                {/* Average Win */}
+                <div className="bg-base-200/50 rounded-xl p-4">
+                  <div className="text-sm text-base-content/70 mb-2">Average Win</div>
+                  <div className="text-2xl font-bold text-success/90">
+                    ${formatMoney(data.filter(session => session.profit > 0).reduce((acc, session) => acc + session.profit, 0) / data.filter(session => session.profit > 0).length || 0)}
+                  </div>
+                  <div className="text-sm opacity-70">Per winning session</div>
+                </div>
+
+                {/* Average Loss */}
+                <div className="bg-base-200/50 rounded-xl p-4">
+                  <div className="text-sm text-base-content/70 mb-2">Average Loss</div>
+                  <div className="text-2xl font-bold text-error/80">
+                    ${formatMoney(Math.abs(data.filter(session => session.profit < 0).reduce((acc, session) => acc + session.profit, 0) / data.filter(session => session.profit < 0).length || 0))}
+                  </div>
+                  <div className="text-sm opacity-70">Per losing session</div>
+                </div>
+              </div>
             </div>
-          </div>
-        </div>
-      </div>
-    </div>
+          </motion.div>
+        </motion.div>
+      )}
+    </>
   );
 };
 

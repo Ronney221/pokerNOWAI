@@ -701,18 +701,18 @@ const Bankroll = () => {
                 Track your progress, analyze your performance, and improve your game.
               </p>
             </motion.div>
-
+          
             {/* Stats Cards */}
-            <motion.div 
-              variants={containerVariants}
-              className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
-            >
+          <motion.div 
+            variants={containerVariants}
+            className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8"
+          >
               <motion.div 
                 variants={itemVariants} 
                 className="card bg-base-100/90 shadow-xl backdrop-blur-sm border border-base-200 hover:border-primary/50 transition-all duration-300"
                 whileHover={{ y: -5 }}
               >
-                <div className="card-body">
+              <div className="card-body">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -724,15 +724,15 @@ const Bankroll = () => {
                       <p className="text-2xl font-bold">${formatMoney(calculateTotalBuyIn())}</p>
                     </div>
                   </div>
-                </div>
-              </motion.div>
-              
+              </div>
+            </motion.div>
+            
               <motion.div 
                 variants={itemVariants} 
                 className="card bg-base-100/90 shadow-xl backdrop-blur-sm border border-base-200 hover:border-secondary/50 transition-all duration-300"
                 whileHover={{ y: -5 }}
               >
-                <div className="card-body">
+              <div className="card-body">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-full bg-secondary/10 flex items-center justify-center">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -744,15 +744,15 @@ const Bankroll = () => {
                       <p className="text-2xl font-bold">${formatMoney(calculateTotalCashOut())}</p>
                     </div>
                   </div>
-                </div>
-              </motion.div>
-              
+              </div>
+            </motion.div>
+            
               <motion.div 
                 variants={itemVariants} 
                 className="card bg-base-100/90 shadow-xl backdrop-blur-sm border border-base-200 hover:border-accent/50 transition-all duration-300"
                 whileHover={{ y: -5 }}
               >
-                <div className="card-body">
+              <div className="card-body">
                   <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center">
                       <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-accent" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -762,13 +762,13 @@ const Bankroll = () => {
                     <div>
                       <h3 className="text-sm font-medium opacity-70">Total Profit/Loss</h3>
                       <p className={`text-2xl font-bold ${calculateTotalProfit() >= 0 ? 'text-success' : 'text-error'}`}>
-                        ${formatMoney(calculateTotalProfit())}
-                      </p>
+                  ${formatMoney(calculateTotalProfit())}
+                </p>
                     </div>
                   </div>
-                </div>
-              </motion.div>
+              </div>
             </motion.div>
+          </motion.div>
           </div>
 
           {/* Main Action Buttons Section */}
@@ -785,7 +785,7 @@ const Bankroll = () => {
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                   </svg>
-                </div>
+            </div>
                 <div className="text-center">
                   <h3 className="text-lg font-semibold mb-1">Add Session</h3>
                   <p className="text-sm opacity-70">Track a new session</p>
@@ -873,37 +873,37 @@ const Bankroll = () => {
                 <div className="overflow-x-auto overflow-y-visible">
                   <div className="min-w-full inline-block align-middle">
                     <div className="overflow-hidden">
-                      <table className="table w-full">
-                        <thead>
+                  <table className="table w-full">
+                    <thead>
                           <tr className="bg-base-200/50">
-                            {isGlobalEditMode && (
+                        {isGlobalEditMode && (
                               <th className="w-16">
-                                <label>
-                                  <input
-                                    type="checkbox"
-                                    className="checkbox"
-                                    checked={selectedSessions.length === performanceData.length}
-                                    onChange={(e) => {
-                                      if (e.target.checked) {
-                                        setSelectedSessions(performanceData.map(item => item._id));
-                                      } else {
-                                        setSelectedSessions([]);
-                                      }
-                                    }}
-                                  />
-                                </label>
-                              </th>
-                            )}
-                            <th>Date</th>
-                            <th>Session</th>
-                            <th>Player</th>
+                            <label>
+                              <input
+                                type="checkbox"
+                                className="checkbox"
+                                checked={selectedSessions.length === performanceData.length}
+                                onChange={(e) => {
+                                  if (e.target.checked) {
+                                    setSelectedSessions(performanceData.map(item => item._id));
+                                  } else {
+                                    setSelectedSessions([]);
+                                  }
+                                }}
+                              />
+                            </label>
+                          </th>
+                        )}
+                        <th>Date</th>
+                        <th>Session</th>
+                        <th>Player</th>
                             <th className="text-right">Buy-in</th>
                             <th className="text-right">Cash-out</th>
                             <th className="text-right">Profit/Loss</th>
                             {isGlobalEditMode && <th className="w-24">Actions</th>}
-                          </tr>
-                        </thead>
-                        <tbody>
+                      </tr>
+                    </thead>
+                    <tbody>
                           {performanceData.map(session => (
                             <motion.tr 
                               key={session._id} 
@@ -927,93 +927,93 @@ const Bankroll = () => {
                               )}
                               <td className="font-medium">
                                 {editingRow === session._id ? (
-                                  <input
-                                    type="date"
-                                    name="sessionDate"
-                                    value={editFormData.sessionDate}
-                                    onChange={handleEditInputChange}
+                            <input
+                              type="date"
+                              name="sessionDate"
+                              value={editFormData.sessionDate}
+                              onChange={handleEditInputChange}
                                     className="input input-bordered input-sm w-full"
-                                  />
+                            />
                                 ) : formatDate(session.sessionDate)}
-                              </td>
-                              <td>
+                          </td>
+                          <td>
                                 {editingRow === session._id ? (
-                                  <input
-                                    type="text"
-                                    name="sessionName"
-                                    value={editFormData.sessionName}
-                                    onChange={handleEditInputChange}
+                            <input
+                              type="text"
+                              name="sessionName"
+                              value={editFormData.sessionName}
+                              onChange={handleEditInputChange}
                                     className="input input-bordered input-sm w-full"
                                     placeholder="Enter session name"
-                                  />
+                            />
                                 ) : (session.sessionName || 'Unnamed Game')}
-                              </td>
-                              <td>
+                          </td>
+                          <td>
                                 {editingRow === session._id ? (
-                                  <input
-                                    type="text"
-                                    name="playerName"
-                                    value={editFormData.playerName}
-                                    onChange={handleEditInputChange}
+                            <input
+                              type="text"
+                              name="playerName"
+                              value={editFormData.playerName}
+                              onChange={handleEditInputChange}
                                     className="input input-bordered input-sm w-full"
                                     placeholder="Enter player name"
-                                  />
+                            />
                                 ) : session.playerName}
-                              </td>
+                          </td>
                               <td className="text-right">
                                 {editingRow === session._id ? (
-                                  <input
-                                    type="number"
-                                    name="buyIn"
-                                    value={editFormData.buyIn}
-                                    onChange={handleEditInputChange}
+                            <input
+                              type="number"
+                              name="buyIn"
+                              value={editFormData.buyIn}
+                              onChange={handleEditInputChange}
                                     className="input input-bordered input-sm w-full text-right"
                                     step="1"
-                                    min="0"
-                                  />
+                              min="0"
+                            />
                                 ) : `$${formatMoney(session.buyIn)}`}
-                              </td>
+                          </td>
                               <td className="text-right">
                                 {editingRow === session._id ? (
-                                  <input
-                                    type="number"
-                                    name="cashOut"
-                                    value={editFormData.cashOut}
-                                    onChange={handleEditInputChange}
+                            <input
+                              type="number"
+                              name="cashOut"
+                              value={editFormData.cashOut}
+                              onChange={handleEditInputChange}
                                     className="input input-bordered input-sm w-full text-right"
                                     step="1"
-                                    min="0"
-                                  />
+                              min="0"
+                            />
                                 ) : `$${formatMoney(session.cashOut)}`}
-                              </td>
+                          </td>
                               <td className={`text-right font-semibold ${session.profit >= 0 ? 'text-success' : 'text-error'}`}>
                                 ${formatMoney(session.profit)}
-                              </td>
+                          </td>
                               {isGlobalEditMode && !editingRow && (
                                 <td>
                                   <div className="flex gap-2 justify-end">
-                                    <button
-                                      className="btn btn-ghost btn-xs"
+                              <button 
+                                className="btn btn-ghost btn-xs"
                                       onClick={() => handleEditClick(session)}
-                                    >
+                              >
                                       <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                                       </svg>
-                                    </button>
-                                  </div>
-                                </td>
-                              )}
+                              </button>
+                            </div>
+                            </td>
+                          )}
                               {editingRow === session._id && (
                                 <td>
                                   <div className="flex gap-2 justify-end">
-                                    <button
+                              <button
                                       className="btn btn-ghost btn-xs"
                                       onClick={handleCancelEdit}
-                                    >
+                              >
                                       <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-error" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                                       </svg>
-                                    </button>
+                              </button>
                                     <button
                                       className="btn btn-ghost btn-xs"
                                       onClick={() => handleSaveEdit(session._id)}
@@ -1023,25 +1023,25 @@ const Bankroll = () => {
                                       </svg>
                                     </button>
                                   </div>
-                                </td>
-                              )}
+                            </td>
+                          )}
                             </motion.tr>
-                          ))}
+                      ))}
                         </tbody>
                         <tfoot className="border-t-2 border-base-200">
-                          <tr className="font-bold">
-                            {isGlobalEditMode && <td></td>}
-                            <td colSpan={3}>Totals</td>
+                      <tr className="font-bold">
+                        {isGlobalEditMode && <td></td>}
+                        <td colSpan={3}>Totals</td>
                             <td className="text-right">${formatMoney(calculateTotalBuyIn())}</td>
                             <td className="text-right">${formatMoney(calculateTotalCashOut())}</td>
                             <td className={`text-right ${calculateTotalProfit() >= 0 ? 'text-success' : 'text-error'}`}>
-                              ${formatMoney(calculateTotalProfit())}
-                            </td>
-                            {isGlobalEditMode && <td></td>}
-                          </tr>
+                          ${formatMoney(calculateTotalProfit())}
+                        </td>
+                        {isGlobalEditMode && <td></td>}
+                      </tr>
                         </tfoot>
-                      </table>
-                    </div>
+                  </table>
+                </div>
                   </div>
                 </div>
               </div>
@@ -1062,7 +1062,7 @@ const Bankroll = () => {
                   <p className="text-base-content/70 mb-8">
                     Add your first poker session to begin tracking your progress and analyzing your results.
                   </p>
-                  <button 
+                    <button 
                     className="btn btn-primary btn-lg gap-2"
                     onClick={handleOpenAddModal}
                   >
@@ -1070,14 +1070,14 @@ const Bankroll = () => {
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
                     </svg>
-                  </button>
-                </div>
+                    </button>
+                  </div>
               </div>
             </motion.div>
           )}
+          
 
-
-
+          
           {/* Add Session Modal */}
           {isAddModalOpen && (
             <div className="fixed inset-0 bg-black bg-opacity-60 flex items-center justify-center z-50">
@@ -1323,7 +1323,7 @@ const Bankroll = () => {
                 </motion.button>
               )}
             </div>
-          </div>
+      </div>
         </motion.div>
       )}
     </motion.div>
