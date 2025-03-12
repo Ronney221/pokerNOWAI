@@ -15,7 +15,29 @@ import { motion, AnimatePresence } from 'framer-motion';
 const HistogramChart = ({ data }) => {
   const [binCount, setBinCount] = useState(10);
   const [selectedBin, setSelectedBin] = useState(null);
-  const [showDistributionStats, setShowDistributionStats] = useState(true);
+
+  // Add color intensity calculation function
+  const getColorIntensity = (value, min, max, isProfit) => {
+    if (isProfit) {
+      // For profits, scale from white to dark green
+      const intensity = (value - 0) / max;
+      const whiteColor = [255, 255, 255]; // White
+      const greenColor = [39, 174, 96]; // #27ae60
+      return `rgb(${
+        Math.round(whiteColor[0] + (greenColor[0] - whiteColor[0]) * intensity)},${
+        Math.round(whiteColor[1] + (greenColor[1] - whiteColor[1]) * intensity)},${
+        Math.round(whiteColor[2] + (greenColor[2] - whiteColor[2]) * intensity)})`
+    } else {
+      // For losses, scale from white to dark red
+      const intensity = (Math.abs(value) - 0) / Math.abs(min);
+      const whiteColor = [255, 255, 255]; // White
+      const redColor = [192, 57, 43]; // #c0392b
+      return `rgb(${
+        Math.round(whiteColor[0] + (redColor[0] - whiteColor[0]) * intensity)},${
+        Math.round(whiteColor[1] + (redColor[1] - whiteColor[1]) * intensity)},${
+        Math.round(whiteColor[2] + (redColor[2] - whiteColor[2]) * intensity)})`
+    }
+  };
 
   // Calculate histogram data and statistics
   const { histogramData, stats } = useMemo(() => {
@@ -65,7 +87,9 @@ const HistogramChart = ({ data }) => {
       sessions: bin.sessions,
       start: bin.start,
       end: bin.end,
-      midpoint: (bin.start + bin.end) / 2
+      midpoint: (bin.start + bin.end) / 2,
+      isProfit: (bin.start + bin.end) / 2 > 0,
+      value: (bin.start + bin.end) / 2  // Add midpoint value for color scaling
     }));
 
     return {
@@ -128,32 +152,28 @@ const HistogramChart = ({ data }) => {
         initial={{ opacity: 0, y: -10 }}
         animate={{ opacity: 1, y: 0 }}
       >
-        <div className="flex items-center gap-4">
-          <div className="form-control w-full max-w-xs">
+        <div className="flex items-center gap-4 flex-1">
+          <div className="form-control w-full max-w-lg">
             <label className="label">
-              <span className="label-text">Number of Bins</span>
+              <span className="label-text">Number of Bins: {binCount}</span>
             </label>
-            <select
-              className="select select-bordered w-full max-w-xs"
+            <input
+              type="range"
+              min="5"
+              max="30"
               value={binCount}
               onChange={(e) => setBinCount(Number(e.target.value))}
-            >
-              <option value="5">5 bins</option>
-              <option value="10">10 bins</option>
-              <option value="15">15 bins</option>
-              <option value="20">20 bins</option>
-            </select>
-          </div>
-          <div className="form-control">
-            <label className="label cursor-pointer gap-2">
-              <span className="label-text">Show Statistics</span>
-              <input
-                type="checkbox"
-                className="toggle toggle-primary"
-                checked={showDistributionStats}
-                onChange={(e) => setShowDistributionStats(e.target.checked)}
-              />
-            </label>
+              className="range range-primary"
+              step="5"
+            />
+            <div className="w-full flex justify-between text-xs px-2 mt-1">
+              <span>5</span>
+              <span>10</span>
+              <span>15</span>
+              <span>20</span>
+              <span>25</span>
+              <span>30</span>
+            </div>
           </div>
         </div>
 
@@ -182,7 +202,6 @@ const HistogramChart = ({ data }) => {
             data={histogramData}
             margin={{ top: 20, right: 20, bottom: 60, left: 20 }}
             onClick={(data) => {
-              // Only set selectedBin if we have valid data with a payload
               if (data && data.activePayload && data.activePayload[0]) {
                 setSelectedBin(data);
               }
@@ -191,11 +210,25 @@ const HistogramChart = ({ data }) => {
             <CartesianGrid strokeDasharray="3 3" opacity={0.1} />
             <XAxis
               dataKey="range"
-              tick={{ fill: '#666' }}
+              tick={(props) => {
+                const { x, y, payload } = props;
+                return (
+                  <g transform={`translate(${x},${y})`}>
+                    <text
+                      x={0}
+                      y={0}
+                      dy={16}
+                      textAnchor="end"
+                      fill="#666"
+                      transform="rotate(-45)"
+                    >
+                      {payload.value}
+                    </text>
+                  </g>
+                );
+              }}
               tickLine={{ stroke: '#666' }}
               label={{ value: 'Profit Range', position: 'bottom', fill: '#666' }}
-              angle={-45}
-              textAnchor="end"
               height={80}
             />
             <YAxis
@@ -219,38 +252,52 @@ const HistogramChart = ({ data }) => {
             />
             <ReferenceLine x="0" stroke="#666" />
             
-            {showDistributionStats && (
-              <>
-                <ReferenceLine
-                  x={stats.mean}
-                  stroke="#36A2EB"
-                  strokeDasharray="3 3"
-                  label={{
-                    value: 'Mean',
-                    position: 'top',
-                    fill: '#36A2EB'
-                  }}
-                />
-                <ReferenceLine
-                  x={stats.median}
-                  stroke="#FF6384"
-                  strokeDasharray="3 3"
-                  label={{
-                    value: 'Median',
-                    position: 'top',
-                    fill: '#FF6384'
-                  }}
-                />
-              </>
-            )}
+            <ReferenceLine
+              x={stats.mean}
+              stroke="#36A2EB"
+              strokeDasharray="3 3"
+              label={{
+                value: 'Mean',
+                position: 'top',
+                fill: '#36A2EB'
+              }}
+            />
+            <ReferenceLine
+              x={stats.median}
+              stroke="#FF6384"
+              strokeDasharray="3 3"
+              label={{
+                value: 'Median',
+                position: 'top',
+                fill: '#FF6384'
+              }}
+            />
             
             <Bar
               name="Session Count"
               dataKey="count"
-              fill="#36A2EB"
-              opacity={0.8}
-              stroke="#36A2EB"
-              strokeWidth={1}
+              className="cursor-pointer"
+              style={{ cursor: 'pointer' }}
+              shape={(props) => {
+                const { x, y, width, height } = props;
+                const isProfit = props.payload.isProfit;
+                const color = getColorIntensity(
+                  props.payload.value,
+                  stats.min,
+                  stats.max,
+                  isProfit
+                );
+                const strokeColor = isProfit ? '#27ae60' : '#c0392b';
+                return (
+                  <path
+                    d={`M ${x},${y + height} h ${width} v ${-height} h ${-width} z`}
+                    fill={color}
+                    stroke={strokeColor}
+                    strokeWidth={1}
+                    opacity={0.8}
+                  />
+                );
+              }}
             />
           </BarChart>
         </ResponsiveContainer>
