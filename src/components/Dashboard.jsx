@@ -105,11 +105,8 @@ const Dashboard = ({ performanceData }) => {
           className="mb-12"
         >
           <h1 className="text-4xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent mb-2">
-            Performance Overview
+            Performance Analytics
           </h1>
-          <p className="text-base-content/70 text-lg">
-            Track your poker journey and analyze your results
-          </p>
         </motion.div>
 
         {/* Chart Type Selection with Enhanced UI */}
@@ -169,12 +166,14 @@ const Dashboard = ({ performanceData }) => {
           className="card bg-base-100 shadow-xl backdrop-blur-sm border border-base-200 mb-16"
         >
           <div className="card-body p-6">
-            <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
-              <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 12l3-3 3 3 4-4M8 21l4-4 4 4M3 4h18M4 4h16v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4z" />
-              </svg>
-              Session Analysis
-            </h2>
+            <div className="flex items-center justify-between mb-6">
+              <h2 className="text-2xl font-bold bg-gradient-to-r from-primary/90 to-secondary/90 bg-clip-text text-transparent">
+                Session History
+              </h2>
+              <div className="text-sm text-base-content/60">
+                {filteredData.length} sessions
+              </div>
+            </div>
             <AnimatePresence mode="wait">
               <motion.div
                 key={selectedChartType}
@@ -196,12 +195,6 @@ const Dashboard = ({ performanceData }) => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.2 }}
         >
-          <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
-            <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-            </svg>
-            Performance Metrics
-          </h2>
           <AnalyticsPanel data={filteredData} />
         </motion.div>
       </div>

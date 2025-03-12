@@ -698,7 +698,7 @@ const Bankroll = () => {
                 Your Poker Journey
               </h1>
               <p className="text-lg opacity-80 max-w-2xl mx-auto">
-                Track your progress, analyze your performance, and improve your game.
+                Track your bankroll, analyze your performance, and improve your game.
               </p>
             </motion.div>
           
@@ -720,7 +720,7 @@ const Bankroll = () => {
                       </svg>
                     </div>
                     <div>
-                      <h3 className="text-sm font-medium opacity-70">Total Buy-in</h3>
+                      <h3 className="text-sm font-medium opacity-70">Total Buy In</h3>
                       <p className="text-2xl font-bold">${formatMoney(calculateTotalBuyIn())}</p>
                     </div>
                   </div>
@@ -740,7 +740,7 @@ const Bankroll = () => {
                       </svg>
                     </div>
                     <div>
-                      <h3 className="text-sm font-medium opacity-70">Total Cash-out</h3>
+                      <h3 className="text-sm font-medium opacity-70">Total Cash Out</h3>
                       <p className="text-2xl font-bold">${formatMoney(calculateTotalCashOut())}</p>
                     </div>
                   </div>
@@ -760,7 +760,7 @@ const Bankroll = () => {
                       </svg>
                     </div>
                     <div>
-                      <h3 className="text-sm font-medium opacity-70">Total Profit/Loss</h3>
+                      <h3 className="text-sm font-medium opacity-70">Current Bankroll</h3>
                       <p className={`text-2xl font-bold ${calculateTotalProfit() >= 0 ? 'text-success' : 'text-error'}`}>
                   ${formatMoney(calculateTotalProfit())}
                 </p>
@@ -770,6 +770,20 @@ const Bankroll = () => {
             </motion.div>
           </motion.div>
           </div>
+
+          {/* Performance Chart Section */}
+          {performanceData.length > 0 && (
+            <motion.div 
+              variants={itemVariants}
+              className="card bg-base-100/90 shadow-xl backdrop-blur-sm border border-base-200 mb-8 overflow-hidden"
+            >
+              <div className="card-body p-6">
+                <div className="w-full" style={{ minHeight: "600px" }}>
+                  {displayChart()}
+                </div>
+              </div>
+            </motion.div>
+          )}
 
           {/* Main Action Buttons Section */}
           <div className="max-w-7xl mx-auto px-4 sm:px-6 mb-8">
@@ -820,20 +834,6 @@ const Bankroll = () => {
             </div>
           </div>
 
-          {/* Performance Chart Section */}
-          {performanceData.length > 0 && (
-            <motion.div 
-              variants={itemVariants}
-              className="card bg-base-100/90 shadow-xl backdrop-blur-sm border border-base-200 mb-8 overflow-hidden"
-            >
-              <div className="card-body p-6">
-                <div className="w-full" style={{ minHeight: "600px" }}>
-                  {displayChart()}
-                </div>
-              </div>
-            </motion.div>
-          )}
-
           {/* Session History Section with Integrated Actions */}
           {performanceData.length > 0 ? (
             <motion.div 
@@ -843,7 +843,13 @@ const Bankroll = () => {
               <div className="card-body p-6">
                 {/* Header with Action Buttons */}
                 <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center justify-between mb-6">
-                  <h3 className="text-xl font-bold">Session History</h3>
+                  
+                <h2 className="text-xl font-semibold mb-6 flex items-center gap-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  </svg>
+                  Session History
+                </h2>
                   {isGlobalEditMode && selectedSessions.length > 0 && (
                     <button 
                       className="btn btn-error btn-sm gap-2" 
