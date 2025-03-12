@@ -5,6 +5,8 @@ import { toast } from 'react-toastify';
 import { motion, AnimatePresence } from 'framer-motion';
 import ReactDOM from 'react-dom';
 import './index.css';
+import generateDemoLedgers from './utils/demoLedgerData';
+import { handlePageChange } from './utils/navigation';
 
 // Animation variants for Framer Motion
 const containerVariants = {
@@ -82,9 +84,11 @@ const SavedLedgers = ({ setCurrentPage }) => {
   };
 
   useEffect(() => {
-    // Redirect if not logged in
+    // Load demo data for non-logged-in users
     if (!currentUser) {
-      setCurrentPage('login');
+      const demoData = generateDemoLedgers();
+      setLedgers(demoData);
+      setLoading(false);
       return;
     }
 
@@ -104,13 +108,25 @@ const SavedLedgers = ({ setCurrentPage }) => {
     };
 
     fetchLedgers();
-  }, [currentUser, setCurrentPage]);
+  }, [currentUser]);
 
   const handleViewLedger = async (ledgerId) => {
     try {
       setLoading(true);
-      const ledger = await getLedgerById(ledgerId);
-      setSelectedLedger(ledger);
+      
+      // For demo data, find the ledger in the current state
+      if (!currentUser) {
+        const demoLedger = ledgers.find(l => l._id === ledgerId);
+        if (demoLedger) {
+          setSelectedLedger(demoLedger);
+        } else {
+          throw new Error('Demo ledger not found');
+        }
+      } else {
+        // For real data, fetch from API
+        const ledger = await getLedgerById(ledgerId);
+        setSelectedLedger(ledger);
+      }
       
       // Add a smooth scroll to top
       window.scrollTo({
@@ -365,6 +381,8 @@ const SavedLedgers = ({ setCurrentPage }) => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-base-100 to-base-200/50 pt-32 pb-20">
+   
+
       {/* Background Elements */}
       <div className="fixed inset-0 pointer-events-none">
         <div className="absolute top-40 right-10 w-96 h-96 bg-primary/5 rounded-full blur-3xl"></div>
@@ -440,7 +458,6 @@ const SavedLedgers = ({ setCurrentPage }) => {
                       <h3 className="text-lg font-medium opacity-70">Total Money Exchanged</h3>
                       <p className="text-4xl font-bold text-accent">
                         ${formatLedgerMoney(selectedLedger.transactions.reduce((total, tx) => {
-                          // For cents games, convert amount to cents before adding
                           const amount = selectedLedger.denomination === 'cents' 
                             ? parseFloat(tx.amount) * 100 
                             : parseFloat(tx.amount);
@@ -590,7 +607,7 @@ const SavedLedgers = ({ setCurrentPage }) => {
                           // For cents games, convert amount to cents before adding
                           const amount = selectedLedger.denomination === 'cents' 
                             ? parseFloat(tx.amount) * 100  // First 100 for dollars->cents, second 100 to match player amounts
-                            : parseFloat(tx.amount) * 100;
+                            : parseFloat(tx.amount) ;
                             
                           return (
                             <motion.div 
@@ -686,6 +703,19 @@ const SavedLedgers = ({ setCurrentPage }) => {
                 <p className="text-lg opacity-80 max-w-2xl mx-auto">
                   Review your past sessions, track your progress, and gain insights from your poker journey.
                 </p>
+                {!currentUser && (
+                  <p className="text-lg opacity-80 max-w-2xl mx-auto mb-8 mt-8 text-primary">
+                    👋 You're viewing demo data. Sign in to track your own poker games!
+                  </p>
+                )}
+                {!currentUser && (
+                  <button 
+                    className="btn btn-primary btn-lg"
+                    onClick={() => handlePageChange('login', setCurrentPage)}
+                  >
+                    Get Started
+                  </button>
+                )}
               </motion.div>
 
               {error && (

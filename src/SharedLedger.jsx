@@ -1,6 +1,23 @@
 import React, { useState, useEffect } from 'react';
 import { getSharedLedgerById } from './services/ledger';
 import { toast } from 'react-toastify';
+import { motion } from 'framer-motion';
+
+// Animation variants
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 }
+};
+
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1
+    }
+  }
+};
 
 const SharedLedger = ({ ledgerId, setCurrentPage }) => {
   const [ledger, setLedger] = useState(null);
@@ -56,15 +73,13 @@ const SharedLedger = ({ ledgerId, setCurrentPage }) => {
     });
   };
 
-  // Display correct money values based on denomination
+  // Format money display based on denomination
   const formatLedgerMoney = (amount) => {
-    const denomination = ledger?.denomination || 'cents';
-    console.log('formatLedgerMoney Debug:');
-    console.log('Input amount:', amount);
-    console.log('Denomination:', denomination);
-    const result = formatMoney(amount, denomination);
-    console.log('Formatted result:', result);
-    return result;
+    if (!amount) return '0.00';
+    const isDollarsGame = ledger?.denomination === 'dollars';
+    // For cents games, convert amount to dollars by dividing by 100
+    // For dollar games, use the amount as is
+    return isDollarsGame ? amount.toFixed(2) : (amount / 100).toFixed(2);
   };
 
   if (loading) {
@@ -139,6 +154,48 @@ const SharedLedger = ({ ledgerId, setCurrentPage }) => {
           <h2 className="text-2xl mt-6 font-semibold">{ledger.sessionName}</h2>
         </div>
 
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+          <motion.div 
+            className="card bg-base-100/90 shadow-xl backdrop-blur-sm border border-base-200"
+            variants={itemVariants}
+          >
+            <div className="card-body">
+              <h3 className="text-lg font-medium opacity-70">Total Players</h3>
+              <p className="text-4xl font-bold text-primary">
+                {ledger.players?.length || 0}
+              </p>
+            </div>
+          </motion.div>
+
+          <motion.div 
+            className="card bg-base-100/90 shadow-xl backdrop-blur-sm border border-base-200"
+            variants={itemVariants}
+          >
+            <div className="card-body">
+              <h3 className="text-lg font-medium opacity-70">Total Transactions</h3>
+              <p className="text-4xl font-bold text-secondary">
+                {ledger.transactions?.length || 0}
+              </p>
+            </div>
+          </motion.div>
+
+          <motion.div 
+            className="card bg-base-100/90 shadow-xl backdrop-blur-sm border border-base-200"
+            variants={itemVariants}
+          >
+            <div className="card-body">
+              <h3 className="text-lg font-medium opacity-70">Total Money Exchanged</h3>
+              <p className="text-4xl font-bold text-accent">
+                ${formatLedgerMoney(ledger.transactions.reduce((total, tx) => {
+                  const isDollarsGame = ledger?.denomination === 'dollars';
+                  const amount = parseFloat(tx.amount);
+                  return total + (isDollarsGame ? amount : amount * 100);
+                }, 0))}
+              </p>
+            </div>
+          </motion.div>
+        </div>
         {/* Players Section */}
         <div className="card bg-base-100 shadow-xl mb-10 overflow-hidden">
           <div className="p-6">
@@ -158,9 +215,14 @@ const SharedLedger = ({ ledgerId, setCurrentPage }) => {
                 </div>
                 <div className="divide-y divide-base-200">
                   {ledger.players.map((player, index) => {
-                    // For cents games, convert amounts to cents before calculating profit
-                    const buyIn = ledger.denomination === 'cents' ? player.buyIn * 100 * 100 : player.buyIn;
-                    const cashOut = ledger.denomination === 'cents' ? player.cashOut * 100 * 100: player.cashOut;
+                    // For cents games, multiply by 100 to match internal storage format
+                    // For dollar games, use amounts as is
+                    // const isDollarsGame = ledger?.denomination === 'dollars';
+                    // const amount = parseFloat(tx.amount);
+                    // return total + (isDollarsGame ? amount : amount * 100);
+                    const isDollarsGame = ledger?.denomination === 'dollars';
+                    const buyIn = (isDollarsGame ? player.buyIn  : player.buyIn);
+                    const cashOut = (isDollarsGame ? player.cashOut  : player.cashOut);
                     const profit = cashOut - buyIn;
                     
                     return (
@@ -239,29 +301,28 @@ const SharedLedger = ({ ledgerId, setCurrentPage }) => {
           </div>
         </div>
 
+
         {/* Transactions Section */}
         <div className="card bg-base-100 shadow-xl overflow-hidden">
           <div className="p-6">
             <div className="flex items-center justify-between mb-6">
               <h3 className="text-xl font-semibold flex items-center gap-3">
                 <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary/70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
-                </svg>
-                Settlement Transactions
-              </h3>
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
+              </svg>
+              Settlement Transactions
+            </h3>
               <div className="text-sm text-base-content/70">
                 {ledger.transactions.length} transactions
               </div>
             </div>
             <div className="overflow-x-auto">
               <div className="min-w-full rounded-lg overflow-hidden space-y-4">
-                {ledger.transactions.map((tx, index) => {
-                  // Transaction amounts are in dollars, convert to cents for cents games
-                  const amount = ledger.denomination === 'cents' 
-                    ? parseFloat(tx.amount) * 100 * 100  // First 100 for dollars->cents, second 100 to match player amounts
-                    : parseFloat(tx.amount) * 100;
-                    
-                  return (
+                  {ledger.transactions.map((tx, index) => {
+                  const isDollarsGame = ledger?.denomination === 'dollars';
+                  const amount = isDollarsGame ? parseFloat(tx.amount) : parseFloat(tx.amount) * 100;
+                      
+                    return (
                     <div key={index} className="group flex items-center justify-between p-6 bg-base-200/30 rounded-2xl hover:bg-base-200/50 transition-all duration-300 cursor-pointer">
                       <div className="flex-1 grid grid-cols-7 items-center gap-4">
                         {/* From Player */}
@@ -280,7 +341,7 @@ const SharedLedger = ({ ledgerId, setCurrentPage }) => {
                         <div className="col-span-3 flex items-center justify-center gap-4">
                           <div className="w-12 h-[2px] bg-base-content/20 group-hover:bg-primary/30 transition-colors" />
                           <div className="font-semibold text-success bg-success/10 px-6 py-2 rounded-full group-hover:bg-success/20 transition-all duration-300 min-w-[120px] text-center">
-                            ${formatLedgerMoney(amount)}
+                          ${formatLedgerMoney(amount)}
                           </div>
                           <div className="w-12 h-[2px] bg-base-content/20 group-hover:bg-primary/30 transition-colors" />
                         </div>
@@ -296,10 +357,10 @@ const SharedLedger = ({ ledgerId, setCurrentPage }) => {
                             <span className="font-medium text-base-content/90">{tx.to}</span>
                           </div>
                         </div>
+                        </div>
                       </div>
-                    </div>
-                  );
-                })}
+                    );
+                  })}
               </div>
             </div>
           </div>

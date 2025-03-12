@@ -74,7 +74,7 @@ const Bankroll = ({ setCurrentPage }) => {
   const [performanceToDelete, setPerformanceToDelete] = useState(null);
   const [isGlobalEditMode, setIsGlobalEditMode] = useState(false);
   const { currentUser } = useAuth();
-  
+
   // Add state for multiple selection
   const [selectedSessions, setSelectedSessions] = useState([]);
   const [isMultiDeleteModalOpen, setIsMultiDeleteModalOpen] = useState(false);
@@ -530,9 +530,11 @@ const Bankroll = ({ setCurrentPage }) => {
                 <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
                   Track Your Poker Journey
                 </h1>
-                <p className="text-lg opacity-80 max-w-2xl mx-auto mb-8">
-                  👋 You're viewing demo data. Sign in to track your own poker sessions!
+                
+                <p className="text-lg opacity-80 max-w-2xl mx-auto mb-8 mt-8 text-primary">
+                  👋 You're viewing demo data. Sign in to track your own poker games!
                 </p>
+                
                 <button 
                   className="btn btn-primary btn-lg"
                   onClick={() => handleNavigation('login')}
@@ -805,7 +807,7 @@ const Bankroll = ({ setCurrentPage }) => {
               <div className="card-body p-6">
                 <div className="w-full" style={{ minHeight: "600px" }}>
                   {displayChart()}
-                </div>
+            </div>
               </div>
             </motion.div>
           )}
@@ -824,7 +826,7 @@ const Bankroll = ({ setCurrentPage }) => {
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
                   </svg>
-            </div>
+                  </div>
                 <div className="text-center">
                   <h3 className="text-lg font-semibold mb-1">Add Session</h3>
                   <p className="text-sm opacity-70">Track a new session</p>
@@ -849,7 +851,7 @@ const Bankroll = ({ setCurrentPage }) => {
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-secondary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
                   </svg>
-                </div>
+                            </div>
                 <div className="text-center">
                   <h3 className="text-lg font-semibold mb-1">{isGlobalEditMode ? 'Save Changes' : 'Edit Sessions'}</h3>
                   <p className="text-sm opacity-70">{isGlobalEditMode ? 'Save your edits' : 'Modify existing sessions'}</p>
@@ -875,7 +877,7 @@ const Bankroll = ({ setCurrentPage }) => {
                   </svg>
                   Session History
                 </h2>
-                  {isGlobalEditMode && selectedSessions.length > 0 && (
+                {isGlobalEditMode && selectedSessions.length > 0 && (
                     <button 
                       className="btn btn-error btn-sm gap-2" 
                       onClick={handleOpenMultiDeleteModal}
@@ -885,9 +887,9 @@ const Bankroll = ({ setCurrentPage }) => {
                       </svg>
                       Delete Selected ({selectedSessions.length})
                     </button>
-                  )}
+                )}
                 </div>
-
+                
                 {/* Edit Mode Instruction */}
                 {isGlobalEditMode && !editingRow && (
                   <div className="alert alert-info mb-4 shadow-lg">
@@ -900,7 +902,7 @@ const Bankroll = ({ setCurrentPage }) => {
                     </div>
                   </div>
                 )}
-
+                
                 {/* Session History Table */}
                 <SessionHistoryTable
                   performanceData={performanceData}
@@ -941,7 +943,7 @@ const Bankroll = ({ setCurrentPage }) => {
                     <button 
                     className="btn btn-primary btn-lg gap-2"
                     onClick={handleOpenAddModal}
-                  >
+                    >
                     Add Your First Session
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4" />
