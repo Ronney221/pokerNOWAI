@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from './contexts/AuthContext';
 import { toast } from 'react-toastify';
 import { getAuth, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { createUserWithOAuth } from './services/auth';
 
 const Register = ({ setCurrentPage }) => {
   const [formData, setFormData] = useState({
@@ -119,11 +120,36 @@ const Register = ({ setCurrentPage }) => {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
       
+      // Format user data to match our schema
+      const userData = {
+        firebaseUid: result.user.uid,
+        email: result.user.email,
+        username: result.user.displayName?.replace(/\s+/g, '_').toLowerCase() || result.user.email.split('@')[0],
+        displayName: result.user.displayName || result.user.email.split('@')[0],
+        lastLogin: new Date(),
+        photoURL: result.user.photoURL
+      };
+
+      console.log('Creating user with OAuth data:', userData);
+
+      // Create user in MongoDB using existing endpoint
+      await createUserWithOAuth(userData);
+      
       toast.success('Account created successfully with Google!');
       setCurrentPage('home');
     } catch (error) {
       console.error('Error during Google sign in:', error);
-      toast.error(error.message || 'Failed to sign in with Google');
+      
+      // More specific error messages
+      if (error.code === 'auth/popup-closed-by-user') {
+        toast.error('Sign-in cancelled. Please try again.');
+      } else if (error.code === 'auth/popup-blocked') {
+        toast.error('Pop-up blocked by browser. Please allow pop-ups and try again.');
+      } else if (error.message.includes('Username or email already exists')) {
+        toast.error('An account with this email already exists. Please sign in instead.');
+      } else {
+        toast.error(error.message || 'Failed to sign in with Google');
+      }
     } finally {
       setLoading(false);
     }

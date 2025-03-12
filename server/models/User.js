@@ -7,6 +7,7 @@ const mongoose = require('mongoose');
  * @property {string} username - Unique username
  * @property {string} email - User's email address
  * @property {string} displayName - User's display name
+ * @property {string} photoURL - User's photo URL
  * @property {Date} createdAt - Account creation timestamp
  * @property {Date} lastLogin - Last login timestamp
  * @property {Array<ObjectId>} analyses - References to analysis documents
@@ -46,6 +47,11 @@ const userSchema = new mongoose.Schema({
   displayName: {
     type: String,
     trim: true
+  },
+  photoURL: {
+    type: String,
+    trim: true,
+    default: null
   },
   createdAt: {
     type: Date,

@@ -7,7 +7,7 @@ router.post('/saveUserData', async (req, res) => {
   try {
     console.log('=== START saveUserData route ===');
     console.log('Received user data:', req.body);
-    const { firebaseUid, email, username, displayName } = req.body;
+    const { firebaseUid, email, username, displayName, photoURL } = req.body;
     
     if (!firebaseUid || !email) {
       console.error('Missing required fields:', { firebaseUid, email });
@@ -41,7 +41,8 @@ router.post('/saveUserData', async (req, res) => {
             email,
             username: username || email.split('@')[0],
             displayName: displayName || username || email.split('@')[0],
-            lastLogin: new Date()
+            lastLogin: new Date(),
+            photoURL
           },
           { 
             new: true,
@@ -61,7 +62,8 @@ router.post('/saveUserData', async (req, res) => {
       firebaseUid,
       email,
       username: username || email.split('@')[0],
-      displayName: displayName || username || email.split('@')[0]
+      displayName: displayName || username || email.split('@')[0],
+      photoURL
     });
 
     const user = new User({
@@ -69,7 +71,8 @@ router.post('/saveUserData', async (req, res) => {
       email,
       username: username || email.split('@')[0],
       displayName: displayName || username || email.split('@')[0],
-      lastLogin: new Date()
+      lastLogin: new Date(),
+      photoURL
     });
 
     try {
