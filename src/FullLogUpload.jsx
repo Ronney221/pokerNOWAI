@@ -181,7 +181,7 @@ function FullLogUpload() {
           variants={containerVariants}
           className="max-w-5xl mx-auto"
         >
-          <div className="card bg-base-100 shadow-xl overflow-hidden">
+          <div className="card">
             <div className="p-8">
               {!currentUser ? (
                 <div className="alert alert-warning justify-center">
@@ -197,59 +197,101 @@ function FullLogUpload() {
                 <div className="space-y-10">
                   {/* Step 1: Enter Player Name */}
                   <div className="space-y-6">
-                    <div className="flex items-center">
-                      <div className="w-10 h-10 rounded-full bg-primary/20 text-primary flex items-center justify-center mr-4">
-                        <span className="text-lg font-bold">1</span>
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                        </svg>
                       </div>
-                      <h2 className="text-2xl font-semibold">Enter Your Player Name</h2>
+                      <div>
+                        <h2 className="text-2xl font-semibold">Enter Your Player Name</h2>
+                        <p className="text-base-content/70 mt-1">This should match your name in the CSV file</p>
+                      </div>
                     </div>
                     
-                    <div className="pl-14">
-                      <div className="form-control">
-                        <input
-                          type="text"
-                          value={playerName}
-                          onChange={(e) => setPlayerName(e.target.value)}
-                          className="input input-bordered w-full max-w-md"
-                          placeholder="Enter your PokerNow player name"
-                          disabled={loading}
-                        />
-                        <label className="label">
-                          <span className="label-text-alt text-base-content/60">
-                            This should match your name in the CSV file and will be used to calculate your top 10 most winning / losing hands
-                          </span>
-                        </label>
-                      </div>
+                    <div className="form-control">
+                      <input
+                        type="text"
+                        value={playerName}
+                        onChange={(e) => setPlayerName(e.target.value)}
+                        className="input input-bordered w-full max-w-md"
+                        placeholder="Enter your PokerNow player name"
+                        disabled={loading}
+                      />
+                      <label className="label">
+                        <span className="label-text-alt text-base-content/60">
+                          Your name will be used to calculate your top 10 most winning / losing hands
+                        </span>
+                      </label>
                     </div>
                   </div>
 
                   {/* Step 2: Upload CSV */}
-                  <div className="space-y-6 border-t border-base-200 pt-10">
-                    <div className="flex items-center">
-                      <div className="w-10 h-10 rounded-full bg-primary/20 text-primary flex items-center justify-center mr-4">
-                        <span className="text-lg font-bold">2</span>
+                  <div className="space-y-6">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
                       </div>
-                      <h2 className="text-2xl font-semibold">Upload CSV Log File</h2>
+                      <div>
+                        <h2 className="text-2xl font-semibold">Upload Game Log</h2>
+                        <p className="text-base-content/70 mt-1">Export your game log from PokerNow and upload the CSV file</p>
+                      </div>
                     </div>
-                    
-                    <p className="text-base-content/70 pl-14">
-                      Export your game log from PokerNow and upload the CSV file here.
-                    </p>
 
-                    <motion.div 
-                      className={`flex flex-col items-center px-6 py-10 mt-2 ml-14 bg-base-200 text-center rounded-xl cursor-pointer border-2 border-dashed transition-colors ${
-                        isDragging 
-                          ? 'border-primary border-opacity-70 bg-primary bg-opacity-5' 
-                          : 'border-base-content border-opacity-10 hover:border-primary hover:border-opacity-50'
-                      }`}
+                    <div 
+                      className={`group relative overflow-hidden rounded-2xl transition-all duration-300
+                        ${isDragging 
+                          ? 'bg-primary/5 border-primary border-opacity-50' 
+                          : 'bg-base-200/50 hover:bg-base-200 border-base-300'
+                        } 
+                        border-2 border-dashed cursor-pointer`}
                       onDragEnter={handleDragEnter}
                       onDragOver={handleDragOver}
                       onDragLeave={handleDragLeave}
                       onDrop={handleDrop}
                       onClick={() => fileInputRef.current?.click()}
-                      whileHover={{ scale: 1.01 }}
-                      whileTap={{ scale: 0.99 }}
                     >
+                      {/* Upload Animation */}
+                      <div className={`absolute inset-0 bg-primary/5 transition-transform duration-700 ease-out
+                        ${isDragging ? 'translate-y-0' : 'translate-y-full'}`} />
+                      
+                      <div className="relative z-10 flex flex-col items-center px-6 py-16">
+                        <div className="w-20 h-20 mb-6">
+                          <motion.div 
+                            animate={isDragging ? { scale: 1.1, y: -10 } : { scale: 1, y: 0 }}
+                            transition={{ type: "spring", stiffness: 300, damping: 20 }}
+                            className={`w-full h-full rounded-2xl flex items-center justify-center
+                              ${isDragging ? 'bg-primary/10 text-primary' : 'bg-base-300/50 text-base-content/40'}`}
+                          >
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-10 w-10" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                            </svg>
+                          </motion.div>
+                        </div>
+
+                        <div className="text-center max-w-sm">
+                          <motion.div
+                            animate={isDragging ? { scale: 1.05 } : { scale: 1 }}
+                            className="text-xl font-medium mb-2"
+                          >
+                            {file ? file.name : (isDragging ? 'Drop to upload' : 'Drop your CSV file here')}
+                          </motion.div>
+                          <p className="text-base-content/60 mb-4">or click to browse</p>
+                          
+                          {/* Required Info */}
+                          <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-base-200/50">
+                            <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4 text-primary/70" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                            </svg>
+                            <span className="text-sm text-base-content/70">
+                              Only .csv files exported from PokerNow are supported
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                      
                       <input 
                         ref={fileInputRef}
                         type="file" 
@@ -258,31 +300,7 @@ function FullLogUpload() {
                         onChange={handleFileChange}
                         disabled={loading}
                       />
-                      
-                      <div className="flex flex-col items-center max-w-md">
-                        <svg xmlns="http://www.w3.org/2000/svg" 
-                          className={`h-16 w-16 ${isDragging ? 'text-primary' : 'text-base-content/40'} mb-4`} 
-                          fill="none" viewBox="0 0 24 24" stroke="currentColor"
-                        >
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" 
-                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" 
-                          />
-                        </svg>
-                        
-                        <div className="text-xl font-medium mb-2">
-                          {file ? file.name : (isDragging ? 'Drop your CSV file here' : 'Drop your CSV file here')}
-                        </div>
-                        
-                        <p className="text-base-content/60 mb-4">or click to browse</p>
-                        
-                        <div className="flex items-center text-sm text-base-content/60">
-                          <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                          Only .csv files exported from PokerNow are supported
-                        </div>
-                      </div>
-                    </motion.div>
+                    </div>
                   </div>
 
                   {/* Upload Button */}
@@ -296,10 +314,13 @@ function FullLogUpload() {
                       <motion.button 
                         onClick={handleUpload}
                         disabled={loading || !file || !playerName}
-                        className="btn btn-primary btn-lg"
+                        className="btn btn-primary btn-lg gap-2"
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                       >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                        </svg>
                         Upload & Analyze
                       </motion.button>
                     )}
