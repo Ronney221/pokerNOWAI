@@ -19,6 +19,7 @@ const Analytics = ({ setCurrentPage }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedView, setSelectedView] = useState(null);
   const [userStatus, setUserStatus] = useState(null);
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   // Separate base URLs for different types of endpoints
   const herokuBase = import.meta.env.VITE_HEROKU; // Heroku for Python analysis backend
@@ -499,9 +500,9 @@ const Analytics = ({ setCurrentPage }) => {
     return (
       <div className="min-h-screen bg-gradient-to-b from-base-100 to-base-200/50 py-12 pt-48">
         <div className="container mx-auto px-4 relative z-10">
-          <div className="text-center mb-12">
-            <h1 className="text-4xl font-bold mb-6 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-              Poker Analysis Dashboard
+          <div className="text-center mb-16">
+            <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+              Analyze Your Poker Game
             </h1>
             <p className="text-lg opacity-80 max-w-2xl mx-auto mb-8 mt-8 text-primary">
               👋 You're viewing demo data. Sign in to analyze your own poker games!
@@ -519,43 +520,115 @@ const Analytics = ({ setCurrentPage }) => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+              className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto px-4"
             >
-              <AnalysisCard
-                title="Player Analysis Dashboard"
-                description="Deep dive into individual players: view their preflop ranges, betting patterns, and detailed metrics all in one place."
-                type="ranges"
-                icon={
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
-                }
-                isPremium={false}
-              />
+              <motion.div
+                whileHover={{ scale: 1.02, y: -5 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setSelectedView('ranges')}
+                className="card bg-base-100/90 shadow-xl backdrop-blur-sm border border-base-200 cursor-pointer overflow-hidden group relative"
+              >
+                {/* Animated gradient background */}
+                <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-emerald-500/0 group-hover:opacity-100 opacity-0 transition-opacity duration-300" />
+                
+                <div className="card-body relative">
+                  <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                  </div>
+                  
+                  <h2 className="card-title text-2xl mb-2 group-hover:text-emerald-500 transition-colors">Player Analysis Dashboard</h2>
+                  <p className="text-base-content/70 mb-6">Deep dive into individual players: view their preflop ranges, betting patterns, and detailed metrics all in one place.</p>
+                  
+                  <div className="card-actions justify-end">
+                    <div className="flex items-center text-emerald-500 font-medium">
+                      <span className="mr-2">Explore</span>
+                      <motion.div
+                        initial={{ x: 0 }}
+                        whileHover={{ x: 5 }}
+                        transition={{ type: "spring", stiffness: 400 }}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                      </motion.div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
 
-              <AnalysisCard
-                title="Player Metrics"
-                description="Track your VPIP, 3-bet%, and other key metrics to understand and improve your playing style."
-                type="metrics"
-                icon={
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                          </svg>
-                }
-                isPremium={false}
-              />
+              <motion.div
+                whileHover={{ scale: 1.02, y: -5 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setSelectedView('metrics')}
+                className="card bg-base-100/90 shadow-xl backdrop-blur-sm border border-base-200 cursor-pointer overflow-hidden group relative"
+              >
+                {/* Animated gradient background */}
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-blue-500/0 group-hover:opacity-100 opacity-0 transition-opacity duration-300" />
+                
+                <div className="card-body relative">
+                  <div className="w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                  </div>
+                  
+                  <h2 className="card-title text-2xl mb-2 group-hover:text-blue-500 transition-colors">Player Metrics</h2>
+                  <p className="text-base-content/70 mb-6">Track your VPIP, 3-bet%, and other key metrics to understand and improve your playing style.</p>
+                  
+                  <div className="card-actions justify-end">
+                    <div className="flex items-center text-blue-500 font-medium">
+                      <span className="mr-2">View Stats</span>
+                      <motion.div
+                        initial={{ x: 0 }}
+                        whileHover={{ x: 5 }}
+                        transition={{ type: "spring", stiffness: 400 }}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                      </motion.div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
 
-              <AnalysisCard
-                title="Notable Hands"
-                description="Review your biggest wins and losses to understand what situations are most profitable for you."
-                type="hands"
-                icon={
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                  </svg>
-                }
-                isPremium={false}
-              />
+              <motion.div
+                whileHover={{ scale: 1.02, y: -5 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setSelectedView('hands')}
+                className="card bg-base-100/90 shadow-xl backdrop-blur-sm border border-base-200 cursor-pointer overflow-hidden group relative"
+              >
+                {/* Animated gradient background */}
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-purple-500/0 group-hover:opacity-100 opacity-0 transition-opacity duration-300" />
+                
+                <div className="card-body relative">
+                  <div className="w-16 h-16 rounded-2xl bg-purple-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                    </svg>
+                  </div>
+                  
+                  <h2 className="card-title text-2xl mb-2 group-hover:text-purple-500 transition-colors">Notable Hands</h2>
+                  <p className="text-base-content/70 mb-6">Review your most significant hands, including biggest wins and losses, to identify patterns and improve decision-making.</p>
+                  
+                  <div className="card-actions justify-end">
+                    <div className="flex items-center text-purple-500 font-medium">
+                      <span className="mr-2">Review Hands</span>
+                      <motion.div
+                        initial={{ x: 0 }}
+                        whileHover={{ x: 5 }}
+                        transition={{ type: "spring", stiffness: 400 }}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                      </motion.div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
             </motion.div>
           )}
 
@@ -918,40 +991,118 @@ const Analytics = ({ setCurrentPage }) => {
             Poker Analysis Dashboard
           </h1>
           
-          {/* Analysis Selection Dropdown */}
-          <div className="max-w-md mx-auto mb-8">
-            <div className="dropdown w-full">
-              <label tabIndex={0} className="btn btn-lg w-full">
-                {selectedAnalysis ? 
-                  selectedAnalysis.name || `Analysis from ${formatDate(selectedAnalysis.timestamp)}` : 
-                  'Select Analysis'}
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 ml-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
-                </svg>
-              </label>
-              <ul tabIndex={0} className="dropdown-content z-[1] menu p-2 shadow-lg bg-base-200 rounded-box w-full max-h-96 overflow-y-auto">
-                {analysisData?.analysis
-                  .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
-                  .map((analysis) => (
-                    <li key={analysis.analysisId} className="mb-2">
-                      <div className="flex items-center justify-between p-3 hover:bg-base-300 rounded-lg">
-                        <button 
-                          className="flex-1 text-left"
-                          onClick={() => setSelectedAnalysis(analysis)}
-                        >
-                          <div className="flex flex-col">
-                            <span className="font-medium">
-                              {analysis.name || `Analysis ${formatDate(analysis.timestamp)}`}
-                            </span>
-                            <span className="text-sm opacity-70">
-                              {formatDate(analysis.timestamp)}
-                            </span>
-                          </div>
-                        </button>
+          {/* Analysis Selection */}
+          <div className="max-w-2xl mx-auto mb-12">
+            <div className="relative">
+              {/* Selected Analysis Button */}
+              <motion.button
+                onClick={() => setIsDropdownOpen(!isDropdownOpen)}
+                className="w-full bg-base-100/90 backdrop-blur-sm border border-base-200 shadow-lg rounded-2xl p-6 flex items-center justify-between group hover:border-primary/30 transition-all duration-300"
+                whileHover={{ y: -2 }}
+                whileTap={{ y: 0 }}
+              >
+                <div className="flex items-center gap-4">
+                  <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                    </svg>
+                  </div>
+                  <div className="text-left">
+                    <div className="text-lg font-medium">
+                      {selectedAnalysis ? 
+                        selectedAnalysis.name || `Analysis from ${formatDate(selectedAnalysis.timestamp)}` : 
+                        'Select Analysis'
+                      }
+                    </div>
+                    {selectedAnalysis && (
+                      <div className="text-sm text-base-content/70">
+                        {formatDate(selectedAnalysis.timestamp)}
                       </div>
-                    </li>
-                  ))}
-              </ul>
+                    )}
+                  </div>
+                </div>
+                <motion.div
+                  animate={{ rotate: isDropdownOpen ? 180 : 0 }}
+                  transition={{ type: "spring", stiffness: 200, damping: 15 }}
+                  className="w-8 h-8 rounded-full bg-base-200/50 flex items-center justify-center group-hover:bg-primary/10 transition-colors"
+                >
+                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-base-content/70 group-hover:text-primary transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 9l-7 7-7-7" />
+                  </svg>
+                </motion.div>
+              </motion.button>
+
+              {/* Dropdown Content */}
+              <AnimatePresence>
+                {isDropdownOpen && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -20, scale: 0.95 }}
+                    animate={{ opacity: 1, y: 0, scale: 1 }}
+                    exit={{ opacity: 0, y: -20, scale: 0.95 }}
+                    transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                    className="absolute top-full left-0 right-0 mt-2 bg-base-100/90 backdrop-blur-sm border border-base-200 shadow-xl rounded-2xl overflow-hidden z-50"
+                  >
+                    <div className="p-2 max-h-[60vh] overflow-y-auto scrollbar-thin scrollbar-thumb-base-300 scrollbar-track-transparent">
+                      {analysisData?.analysis
+                        .sort((a, b) => new Date(b.timestamp) - new Date(a.timestamp))
+                        .map((analysis, index) => (
+                          <motion.div
+                            key={analysis.analysisId}
+                            initial={{ opacity: 0, x: -20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: index * 0.05 }}
+                            className="relative"
+                          >
+                            <motion.button
+                              onClick={() => {
+                                setSelectedAnalysis(analysis);
+                                setIsDropdownOpen(false);
+                              }}
+                              className={`w-full p-4 flex items-center gap-4 rounded-xl transition-all duration-300
+                                ${selectedAnalysis?.analysisId === analysis.analysisId 
+                                  ? 'bg-primary/10 text-primary' 
+                                  : 'hover:bg-base-200/70'}`}
+                              whileHover={{ x: 4 }}
+                              whileTap={{ scale: 0.98 }}
+                            >
+                              <div className={`w-10 h-10 rounded-lg ${selectedAnalysis?.analysisId === analysis.analysisId ? 'bg-primary/20' : 'bg-base-200/50'} flex items-center justify-center`}>
+                                <svg xmlns="http://www.w3.org/2000/svg" className={`h-5 w-5 ${selectedAnalysis?.analysisId === analysis.analysisId ? 'text-primary' : 'text-base-content/70'}`} fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                                </svg>
+                              </div>
+                              <div className="flex-1 text-left">
+                                <div className="font-medium">
+                                  {analysis.name || `Analysis ${formatDate(analysis.timestamp)}`}
+                                </div>
+                                <div className="text-sm text-base-content/70">
+                                  {formatDate(analysis.timestamp)}
+                                </div>
+                              </div>
+                              {selectedAnalysis?.analysisId === analysis.analysisId && (
+                                <div className="w-8 h-8 rounded-full bg-primary/20 flex items-center justify-center">
+                                  <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7" />
+                                  </svg>
+                                </div>
+                              )}
+                            </motion.button>
+                          </motion.div>
+                        ))}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+
+              {/* Backdrop */}
+              {isDropdownOpen && (
+                <motion.div
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  className="fixed inset-0 bg-black/20 backdrop-blur-sm z-40"
+                  onClick={() => setIsDropdownOpen(false)}
+                />
+              )}
             </div>
           </div>
         </div>
@@ -962,56 +1113,115 @@ const Analytics = ({ setCurrentPage }) => {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -20 }}
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+              className="grid grid-cols-1 md:grid-cols-3 gap-8 max-w-7xl mx-auto px-4"
             >
-              <AnalysisCard
-                title="Player Analysis Dashboard"
-                description="Deep dive into individual players: view their preflop ranges, betting patterns, and detailed metrics all in one place."
-                type="ranges"
-                icon={
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
-                  </svg>
-                }
-                isPremium={false}
-              />
+              <motion.div
+                whileHover={{ scale: 1.02, y: -5 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setSelectedView('ranges')}
+                className="card bg-base-100/90 shadow-xl backdrop-blur-sm border border-base-200 cursor-pointer overflow-hidden group relative"
+              >
+                {/* Animated gradient background */}
+                <div className="absolute inset-0 bg-gradient-to-br from-emerald-500/10 to-emerald-500/0 group-hover:opacity-100 opacity-0 transition-opacity duration-300" />
+                
+                <div className="card-body relative">
+                  <div className="w-16 h-16 rounded-2xl bg-emerald-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-emerald-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z" />
+                    </svg>
+                  </div>
+                  
+                  <h2 className="card-title text-2xl mb-2 group-hover:text-emerald-500 transition-colors">Player Analysis Dashboard</h2>
+                  <p className="text-base-content/70 mb-6">Deep dive into individual players: view their preflop ranges, betting patterns, and detailed metrics all in one place.</p>
+                  
+                  <div className="card-actions justify-end">
+                    <div className="flex items-center text-emerald-500 font-medium">
+                      <span className="mr-2">Explore</span>
+                      <motion.div
+                        initial={{ x: 0 }}
+                        whileHover={{ x: 5 }}
+                        transition={{ type: "spring", stiffness: 400 }}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                      </motion.div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
 
-              <AnalysisCard
-                title="Player Metrics"
-                description="Track your VPIP, 3-bet%, and other key metrics to understand and improve your playing style."
-                type="metrics"
-                icon={
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
-                          </svg>
-                }
-                isPremium={false}
-              />
+              <motion.div
+                whileHover={{ scale: 1.02, y: -5 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setSelectedView('metrics')}
+                className="card bg-base-100/90 shadow-xl backdrop-blur-sm border border-base-200 cursor-pointer overflow-hidden group relative"
+              >
+                {/* Animated gradient background */}
+                <div className="absolute inset-0 bg-gradient-to-br from-blue-500/10 to-blue-500/0 group-hover:opacity-100 opacity-0 transition-opacity duration-300" />
+                
+                <div className="card-body relative">
+                  <div className="w-16 h-16 rounded-2xl bg-blue-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-blue-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                    </svg>
+                  </div>
+                  
+                  <h2 className="card-title text-2xl mb-2 group-hover:text-blue-500 transition-colors">Player Metrics</h2>
+                  <p className="text-base-content/70 mb-6">Track your VPIP, 3-bet%, and other key metrics to understand and improve your playing style.</p>
+                  
+                  <div className="card-actions justify-end">
+                    <div className="flex items-center text-blue-500 font-medium">
+                      <span className="mr-2">View Stats</span>
+                      <motion.div
+                        initial={{ x: 0 }}
+                        whileHover={{ x: 5 }}
+                        transition={{ type: "spring", stiffness: 400 }}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                      </motion.div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
 
-              <AnalysisCard
-                title="Notable Hands"
-                description="Review your biggest wins and losses to understand what situations are most profitable for you."
-                type="hands"
-                icon={
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                  </svg>
-                }
-                isPremium={false}
-              />
-
-              {/* <AnalysisCard
-                title="Chart Analysis"
-                description="Explore different chart types including 3Bet, Raise, and Full Shows to understand betting patterns."
-                type="charts"
-                icon={
-                  <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 3.055A9.001 9.001 0 1020.945 13H11V3.055z" />
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M20.488 9H15V3.512A9.025 9.025 0 0120.488 9z" />
-                  </svg>
-                }
-                isPremium={true}
-              /> */}
+              <motion.div
+                whileHover={{ scale: 1.02, y: -5 }}
+                whileTap={{ scale: 0.98 }}
+                onClick={() => setSelectedView('hands')}
+                className="card bg-base-100/90 shadow-xl backdrop-blur-sm border border-base-200 cursor-pointer overflow-hidden group relative"
+              >
+                {/* Animated gradient background */}
+                <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-purple-500/0 group-hover:opacity-100 opacity-0 transition-opacity duration-300" />
+                
+                <div className="card-body relative">
+                  <div className="w-16 h-16 rounded-2xl bg-purple-500/10 flex items-center justify-center mb-4 group-hover:scale-110 transition-transform">
+                    <svg xmlns="http://www.w3.org/2000/svg" className="h-8 w-8 text-purple-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+                    </svg>
+                  </div>
+                  
+                  <h2 className="card-title text-2xl mb-2 group-hover:text-purple-500 transition-colors">Notable Hands</h2>
+                  <p className="text-base-content/70 mb-6">Review your most significant hands, including biggest wins and losses, to identify patterns and improve decision-making.</p>
+                  
+                  <div className="card-actions justify-end">
+                    <div className="flex items-center text-purple-500 font-medium">
+                      <span className="mr-2">Review Hands</span>
+                      <motion.div
+                        initial={{ x: 0 }}
+                        whileHover={{ x: 5 }}
+                        transition={{ type: "spring", stiffness: 400 }}
+                      >
+                        <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5l7 7-7 7" />
+                        </svg>
+                      </motion.div>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
             </motion.div>
           )}
 
@@ -1141,7 +1351,7 @@ const Analytics = ({ setCurrentPage }) => {
                             <div className="flex items-center justify-between">
                               <h3 className="text-xl font-medium">Range Analysis</h3>
                               <div className="text-sm opacity-70">
-                                Showing first 12 preflop actions
+                                Showing top 12 preflop actions
                               </div>
                             </div>
                             

@@ -85,7 +85,7 @@ const Ledger = ({ setCurrentPage }) => {
     const groupNicknames = (names) => {
       const groups = [];
       const assigned = new Set();
-
+  
       // Sort names alphabetically first
       const sortedNames = [...names].sort((a, b) => a.localeCompare(b));
 
@@ -99,8 +99,8 @@ const Ledger = ({ setCurrentPage }) => {
         // Find similar names
         sortedNames.forEach((otherName) => {
           if (!assigned.has(otherName) && areSimilarNames(name, otherName)) {
-            group.push(otherName);
-            assigned.add(otherName);
+              group.push(otherName);
+              assigned.add(otherName);
           }
         });
         
@@ -621,7 +621,7 @@ const Ledger = ({ setCurrentPage }) => {
             className="max-w-4xl mx-auto space-y-12"
           >
             {/* File Upload Section with enhanced visual feedback */}
-            <div className={`space-y-6 ${aliasGroups.length > 0 ? 'opacity-50 pointer-events-none' : ''}`}>
+                <div className={`space-y-6 ${aliasGroups.length > 0 ? 'opacity-50 pointer-events-none' : ''}`}>
               <div className="flex items-center gap-4">
                 <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center">
                   <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -700,62 +700,62 @@ const Ledger = ({ setCurrentPage }) => {
             {aliasGroups.length > 0 && !groupingConfirmed && (
               <div className="mt-10 border-t border-base-200 pt-10">
                 <div className="flex items-center mb-6">
-                  <div className="w-10 h-10 rounded-full bg-primary/20 text-primary flex items-center justify-center mr-4">
+                    <div className="w-10 h-10 rounded-full bg-primary/20 text-primary flex items-center justify-center mr-4">
                     <span className="text-lg font-bold">2</span>
+                    </div>
+                    <h2 className="text-2xl font-semibold">Select Game Denomination</h2>
                   </div>
-                  <h2 className="text-2xl font-semibold">Select Game Denomination</h2>
-                </div>
-                
+                  
                 <p className="text-base-content/70 pl-14 mb-6">
-                  Choose whether your poker game is played with cents (100 cents = $1) or dollars.
+                    Choose whether your poker game is played with cents (100 cents = $1) or dollars.
                   This will affect how the amounts are displayed and calculated.
-                </p>
-                
+                  </p>
+                  
                 <div className="pl-14">
-                  <div className="flex gap-6">
-                    <label className="flex items-center gap-3 p-4 border border-base-300 rounded-lg cursor-pointer hover:bg-base-200/50 transition-colors">
-                      <input
-                        type="radio"
-                        name="denomination"
-                        value="cents"
-                        checked={denomination === 'cents'}
-                        onChange={handleDenominationChange}
-                        className="radio radio-primary"
-                      />
-                      <div>
-                        <div className="font-medium">Cents</div>
-                        <div className="text-sm text-base-content/70">example: 0.25/0.50</div>
+                    <div className="flex gap-6">
+                      <label className="flex items-center gap-3 p-4 border border-base-300 rounded-lg cursor-pointer hover:bg-base-200/50 transition-colors">
+                        <input
+                          type="radio"
+                          name="denomination"
+                          value="cents"
+                          checked={denomination === 'cents'}
+                          onChange={handleDenominationChange}
+                          className="radio radio-primary"
+                        />
+                        <div>
+                          <div className="font-medium">Cents</div>
+                          <div className="text-sm text-base-content/70">example: 0.25/0.50</div>
+                        </div>
+                      </label>
+                      <label className="flex items-center gap-3 p-4 border border-base-300 rounded-lg cursor-pointer hover:bg-base-200/50 transition-colors">
+                        <input
+                          type="radio"
+                          name="denomination"
+                          value="dollars"
+                          checked={denomination === 'dollars'}
+                          onChange={handleDenominationChange}
+                          className="radio radio-primary"
+                        />
+                        <div>
+                          <div className="font-medium">Dollars</div>
+                          <div className="text-sm text-base-content/70">example: 1/2</div>
+                        </div>
+                      </label>
                       </div>
-                    </label>
-                    <label className="flex items-center gap-3 p-4 border border-base-300 rounded-lg cursor-pointer hover:bg-base-200/50 transition-colors">
-                      <input
-                        type="radio"
-                        name="denomination"
-                        value="dollars"
-                        checked={denomination === 'dollars'}
-                        onChange={handleDenominationChange}
-                        className="radio radio-primary"
-                      />
-                      <div>
-                        <div className="font-medium">Dollars</div>
-                        <div className="text-sm text-base-content/70">example: 1/2</div>
-                      </div>
-                    </label>
+                    </div>
                   </div>
-                </div>
-              </div>
-            )}
+                )}
 
-            {/* Step 3: Fuzzy grouping suggestions */}
-            {aliasGroups.length > 0 && !groupingConfirmed && (
-              <div className="mt-10 border-t border-base-200 pt-10">
-                <div className="flex items-center mb-6">
-                  <div className="w-10 h-10 rounded-full bg-primary/20 text-primary flex items-center justify-center mr-4">
-                    <span className="text-lg font-bold">3</span>
-                  </div>
-                  <h2 className="text-2xl font-semibold">Confirm Player Names</h2>
-                </div>
-                
+                {/* Step 3: Fuzzy grouping suggestions */}
+                {aliasGroups.length > 0 && !groupingConfirmed && (
+                  <div className="mt-10 border-t border-base-200 pt-10">
+                    <div className="flex items-center mb-6">
+                      <div className="w-10 h-10 rounded-full bg-primary/20 text-primary flex items-center justify-center mr-4">
+                        <span className="text-lg font-bold">3</span>
+                      </div>
+                      <h2 className="text-2xl font-semibold">Confirm Player Names</h2>
+                    </div>
+                    
                 <div className="pl-14 mb-6">
                   <p className="text-base-content/70">
                     Review and confirm player names. Similar names have been grouped together.
@@ -764,13 +764,13 @@ const Ledger = ({ setCurrentPage }) => {
                 </div>
 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
-                  {aliasGroups.map((groupObj, index) => {
-                    const hasMultipleNames = groupObj.group.length > 1;
+                      {aliasGroups.map((groupObj, index) => {
+                        const hasMultipleNames = groupObj.group.length > 1;
                     const profit = groupObj.totals.combined - groupObj.totals.buyIn;
                     // Use the first alias as a stable ID
                     const stableId = `group-${groupObj.group[0]}`;
                     
-                    return (
+                        return (
                       <motion.div
                         key={stableId}
                         layout
@@ -789,11 +789,11 @@ const Ledger = ({ setCurrentPage }) => {
                               >
                                 <span className="text-lg font-bold">{index + 1}</span>
                               </div>
-                              <div>
+                                <div>
                                 <h3 className="font-medium">Group #{index + 1}</h3>
                                 <p className="text-sm opacity-70">{groupObj.group.length} {groupObj.group.length === 1 ? 'alias' : 'aliases'}</p>
-                              </div>
-                            </div>
+                                  </div>
+                                </div>
                             <div className={`px-3 py-1.5 rounded-full
                               ${profit >= 0 
                                 ? 'bg-emerald-500/10 text-emerald-600 dark:bg-emerald-500/20 dark:text-emerald-400' 
@@ -801,9 +801,9 @@ const Ledger = ({ setCurrentPage }) => {
                               border border-current border-opacity-10
                               font-semibold text-right text-base`}>
                               ${formatMoney(profit)}
-                            </div>
-                          </div>
-
+                                </div>
+                              </div>
+                              
                           {/* Aliases Section */}
                           <div className="bg-base-100/50 rounded-xl p-4 mb-4">
                             <div className="text-sm font-medium mb-2">Aliases</div>
@@ -827,9 +827,9 @@ const Ledger = ({ setCurrentPage }) => {
                                   )}
                                 </div>
                               ))}
-                            </div>
-                          </div>
-
+                                </div>
+                              </div>
+                              
                           {/* Financial Summary */}
                           <div className="grid grid-cols-2 gap-4 mb-4">
                             <div className="bg-base-100/50 rounded-xl p-4">
@@ -843,56 +843,56 @@ const Ledger = ({ setCurrentPage }) => {
                           </div>
 
                           {/* Player Name Input */}
-                          <div className="form-control">
-                            <label className="label">
-                              <span className="label-text font-medium">Player Name</span>
+                              <div className="form-control">
+                                <label className="label">
+                                  <span className="label-text font-medium">Player Name</span>
                               {hasMultipleNames && (
                                 <span className="label-text-alt text-primary animate-pulse">
                                   Multiple aliases detected
                                 </span>
                               )}
-                            </label>
-                            <input
-                              type="text"
-                              value={groupObj.canonical}
-                              onChange={(e) => handleCanonicalChange(index, e.target.value)}
-                              className="input input-bordered w-full"
+                                </label>
+                                <input
+                                  type="text"
+                                  value={groupObj.canonical}
+                                  onChange={(e) => handleCanonicalChange(index, e.target.value)}
+                                  className="input input-bordered w-full"
                               placeholder="Enter player name"
-                            />
-                          </div>
-                        </div>
+                                />
+                              </div>
+                            </div>
                       </motion.div>
-                    );
-                  })}
-                </div>
-
+                        );
+                      })}
+                    </div>
+                    
                 {/* Action Buttons */}
                 <div className="flex justify-center gap-4 mt-8">
-                  <button
-                    onClick={confirmGrouping}
+                      <button
+                        onClick={confirmGrouping}
                     className="btn btn-primary"
-                  >
-                    Confirm Player Names
-                  </button>
-                </div>
-              </div>
-            )}
+                      >
+                        Confirm Player Names
+                      </button>
+                    </div>
+                  </div>
+                )}
 
-            {/* Step 4: Confirmed groupings displayed in a table */}
-            {groupingConfirmed && (
-              <div className="mt-10 border-t border-base-200 pt-10">                    
+                {/* Step 4: Confirmed groupings displayed in a table */}
+                {groupingConfirmed && (
+                  <div className="mt-10 border-t border-base-200 pt-10">                    
                 <div className="flex items-center mb-8">
                   <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center mr-4">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
                     </svg>
-                  </div>
+                      </div>
                   <div>
-                    <h2 className="text-2xl font-semibold">Review Player Data</h2>
+                      <h2 className="text-2xl font-semibold">Review Player Data</h2>
                     <p className="text-base-content/70 mt-1">Verify player results before calculating settlements</p>
                   </div>
-                </div>
-
+                    </div>
+                    
                 {/* Session Name Input */}
                 <div className="card bg-base-100/90 shadow-xl backdrop-blur-sm border border-base-200 mb-8">
                   <div className="card-body">
@@ -1039,22 +1039,22 @@ const Ledger = ({ setCurrentPage }) => {
                                         <>
                                           <div className="font-medium text-lg">{playerName}</div>
                                           <div className="text-sm text-base-content/70 flex flex-wrap gap-1 mt-1">
-                                            {Array.from(aliases).map((alias, i) => (
-                                              <span key={i} className="badge badge-sm badge-ghost">{alias}</span>
-                                            ))}
-                                          </div>
+                                      {Array.from(aliases).map((alias, i) => (
+                                        <span key={i} className="badge badge-sm badge-ghost">{alias}</span>  
+                                      ))}
+                                    </div>
                                         </>
                                       )}
-                                    </div>
+                        </div>
                                   </motion.div>
-                                </div>
+                      </div>
 
                                 {/* Financial Info */}
                                 <div className="flex items-center gap-8">
                                   <div className="text-right">
                                     <div className="text-sm text-base-content/70">Buy-in</div>
                                     <div className="font-medium">${formatMoney(totals.buyIn)}</div>
-                                  </div>
+                    </div>
                                   <div className="text-right">
                                     <div className="text-sm text-base-content/70">Cash-out</div>
                                     <div className="font-medium">${formatMoney(totals.combined)}</div>
@@ -1077,39 +1077,39 @@ const Ledger = ({ setCurrentPage }) => {
                   </div>
                 </motion.div>
 
-                {/* Action Buttons */}
-                <div className="flex justify-center gap-4 mt-8">
-                  <button 
-                    onClick={backToGrouping} 
-                    className="btn btn-outline"
-                  >
-                    Edit Player Names
-                  </button>
-                  <button
-                    onClick={calculateSettlement}
-                    className="btn btn-primary"
-                  >
-                    Calculate Settlements
-                  </button>
-                </div>
-              </div>
-            )}
+                    {/* Action Buttons */}
+                    <div className="flex justify-center gap-4 mt-8">
+                      <button 
+                        onClick={backToGrouping} 
+                        className="btn btn-outline"
+                      >
+                        Edit Player Names
+                      </button>
+                      <button
+                        onClick={calculateSettlement}
+                        className="btn btn-primary"
+                      >
+                        Calculate Settlements
+                      </button>
+                    </div>
+                  </div>
+                )}
 
-            {/* Step 5: Settlement Transactions displayed in a table */}
-            {transactions.length > 0 && (
+                {/* Step 5: Settlement Transactions displayed in a table */}
+                {transactions.length > 0 && (
               <div className="mt-10 border-t border-base-200 pt-10" id="settlements">
                 <div className="flex items-center mb-8">
                   <div className="w-12 h-12 rounded-xl bg-primary/10 text-primary flex items-center justify-center mr-4">
                     <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M8 7h12m0 0l-4-4m4 4l-4 4m0 6H4m0 0l4 4m-4-4l4-4" />
                     </svg>
-                  </div>
+                      </div>
                   <div>
                     <h2 className="text-2xl font-semibold">Settlement Plan</h2>
                     <p className="text-base-content/70 mt-1">Optimized payment plan to settle all debts</p>
                   </div>
-                </div>
-
+                    </div>
+                    
                 <motion.div 
                   className="card bg-base-100/90 shadow-xl backdrop-blur-sm border border-base-200 overflow-hidden"
                   initial={{ opacity: 0, y: 20 }}
@@ -1146,7 +1146,7 @@ const Ledger = ({ setCurrentPage }) => {
                         </div>
                       </div>
                     </div>
-
+                    
                     {/* Transactions List */}
                     <div className="space-y-4">
                       {(() => {
@@ -1180,8 +1180,8 @@ const Ledger = ({ setCurrentPage }) => {
                                   </div>
                                   <span className="font-medium">{t.from}</span>
                                 </motion.div>
-                              </div>
-
+                        </div>
+                        
                               {/* Arrow and Amount */}
                               <div className="flex items-center gap-4">
                                 <motion.div 
@@ -1208,7 +1208,7 @@ const Ledger = ({ setCurrentPage }) => {
                                   animate={{ scaleX: 1 }}
                                   transition={{ delay: index * 0.1 + 0.2 }}
                                 />
-                              </div>
+                      </div>
 
                               {/* To Player */}
                               <div className="flex-1 flex justify-end">
@@ -1220,16 +1220,16 @@ const Ledger = ({ setCurrentPage }) => {
                                     ${playerColors.icons[getPlayerColorIndex(t.to, uniquePlayers)]}`}>
                                     <svg xmlns="http://www.w3.org/2000/svg" className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                                    </svg>
-                                  </div>
+                              </svg>
+                            </div>
                                   <span className="font-medium">{t.to}</span>
                                 </motion.div>
-                              </div>
-                            </div>
+                          </div>
+                          </div>
                           </motion.div>
                         ));
                       })()}
-                    </div>
+                        </div>
                   </div>
                 </motion.div>
 
@@ -1255,33 +1255,33 @@ const Ledger = ({ setCurrentPage }) => {
                       </motion.button>
                     ) : (
                       <motion.button
-                        onClick={viewSavedLedgers}
+                          onClick={viewSavedLedgers}
                         className="btn btn-primary btn-lg gap-2 min-w-[200px]"
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
-                      >
+                        >
                         <svg xmlns="http://www.w3.org/2000/svg" className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                        </svg>
-                        View Saved Ledgers
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                          View Saved Ledgers
                       </motion.button>
                     )
                   ) : (
-                    <div className="card bg-base-100 shadow-lg border border-base-300 p-6">
+                      <div className="card bg-base-100 shadow-lg border border-base-300 p-6">
                       <div className="flex items-center gap-4">
-                        <div className="flex-shrink-0">
+                          <div className="flex-shrink-0">
                           <div className="w-12 h-12 rounded-xl bg-info/10 text-info flex items-center justify-center">
                             <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                             </svg>
                           </div>
-                        </div>
-                        <div className="flex-1">
+                          </div>
+                          <div className="flex-1">
                           <h3 className="text-lg font-semibold">Want to save this ledger?</h3>
                           <p className="text-base-content/70 text-sm mt-1">
                             Sign in to save your ledger data and track your poker progress.
                           </p>
-                        </div>
+                          </div>
                         <motion.button
                           onClick={() => setCurrentPage('login')}
                           className="btn btn-primary"
@@ -1290,10 +1290,10 @@ const Ledger = ({ setCurrentPage }) => {
                         >
                           Sign In
                         </motion.button>
+                        </div>
                       </div>
-                    </div>
-                  )}
-                </div>
+                    )}
+                  </div>
               </div>
             )}
           </motion.div>
