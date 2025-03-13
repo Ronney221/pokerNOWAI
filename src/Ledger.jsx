@@ -8,7 +8,6 @@ import { useAuth } from './contexts/AuthContext';
 import { saveLedgerData } from './services/ledger';
 import { motion, AnimatePresence } from 'framer-motion';
 import { pageTransitionVariants, containerVariants, itemVariants } from './animations/pageTransitions';
-import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 
 const Ledger = ({ setCurrentPage }) => {
     const [parsedData, setParsedData] = useState([]);
